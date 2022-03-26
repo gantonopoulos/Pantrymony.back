@@ -1,13 +1,15 @@
 namespace Pantrymony.back.Model;
 
-public record Victual(
-    Guid Identifier,
-    string Name,
-    string ImageUrl,
-    ushort Quantity,
-    double Calories,
-    double Protein,
-    double Fat,
-    double Carbs,
-    Unit Unit
-);
+public class Victual
+{
+    public Guid Identifier { get; set; }
+    public string Name { get; set; }
+    public string ImageUrl { get; set; }
+    public ushort Quantity { get; set; }
+    public double Calories { get; set; }
+    public double Protein { get; set; }
+    public double Fat { get; set; }
+    public double Carbs { get; set; }
+    
+    public Unit Unit { get; set; }
+}
