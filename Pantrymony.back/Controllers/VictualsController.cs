@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Pantrymony.back.Model;
 
@@ -9,50 +10,6 @@ public class VictualsController: ControllerBase
 {
     private ILogger<VictualsController> _logger;
 
-    private List<Victual> db = new()
-    {
-         new Victual{
-             Identifier = Guid.NewGuid(), 
-             Name= "Fakes",
-             ImageUrl = "", 
-             Calories = 45, 
-             Carbs = 45, 
-             Fat = 3, 
-             Protein = 52, 
-             Quantity = 100,
-             Unit = new Unit("Grams")},
-         new Victual{
-             Identifier = Guid.NewGuid(), 
-             Name= "Cucumbers",
-             ImageUrl = "", 
-             Calories = 13, 
-             Carbs = 2, 
-             Fat = 1, 
-             Protein = 5, 
-             Quantity = 40,
-             Unit = new Unit("Grams")},
-         new Victual{
-             Identifier = Guid.NewGuid(), 
-             Name= "Onions",
-             ImageUrl = "", 
-             Calories = 27, 
-             Carbs = 18, 
-             Fat = 1, 
-             Protein = 6, 
-             Quantity = 230,
-             Unit = new Unit("Grams")},
-         new Victual{
-             Identifier = Guid.NewGuid(), 
-             Name= "Meat",
-             ImageUrl = "", 
-             Calories = 450, 
-             Carbs = 2, 
-             Fat = 15, 
-             Protein = 50, 
-             Quantity = 570,
-             Unit = new Unit("Grams")},
-    };
-
     public VictualsController(ILogger<VictualsController> logger)
     {
         _logger = logger;
@@ -61,20 +18,51 @@ public class VictualsController: ControllerBase
     [HttpGet(Name = "GetVictuals")]
     public ActionResult<IEnumerable<Victual>> Get()
     {
-        return db.ToArray();
+        return DataSource.Data.ToArray();
     }
 
-    [HttpGet("title")]
-    public ActionResult<string> GetTitle()
+    [HttpGet("{id}")]
+    public ActionResult<Victual?> GetVictualBy([FromRoute (Name = "id")] Guid id)
     {
-        return new JsonResult("Success");
+        var victual =  DataSource.Data.FirstOrDefault(entry => entry.Identifier == id);
+        return victual == default(Victual) ? NotFound() : Ok(victual);
     }
 
-
-    [HttpGet("{email}")]
-    public IEnumerable<Victual> GetUserVictuals(string email = "")
+    [HttpPut("{id}")]
+    public IActionResult PutTodoItem(Guid id, Victual victual)
     {
-        return db.Skip(2);
+        if (id != victual.Identifier)
+        {
+            return BadRequest();
+        }
+
+        if (DataSource.Data.All(v => v.Identifier != id))
+        {
+            return NotFound(victual);
+        }
+
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(v => v.Identifier == id));
+        DataSource.Data.Add(victual);
+
+        return NoContent();
     }
-    
+    [HttpPost]
+    public ActionResult<Victual> PostVictual(Victual victual)
+    {
+        DataSource.Data.Add(victual);
+        return CreatedAtAction(nameof(GetVictualBy), new { id = victual.Identifier }, victual);
+    }
+
+    [HttpDelete("{id}")]
+    public IActionResult DeleteVictual(Guid id)
+    {
+        if (DataSource.Data.All(v => v.Identifier != id))
+        {
+            return NotFound();
+        }
+
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(v => v.Identifier == id));
+
+        return NoContent();
+    }
 }
