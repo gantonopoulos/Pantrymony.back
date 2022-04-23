@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda to API-Gateway endpoints mapper for Pantrimony
+Resources:
+    GetVictuals:
+        Type: 'AWS::Serverless::Function'
+        Properties:
+            Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetVictuals
+            Runtime: dotnet6
+            Description: Lambda handler for API Gateway 
+            MemorySize: 512
+            Timeout: 60
+            Events:
+                GetVictualsApi:
+                    Type: Api
+                    Properties:
+#                         RestApiId: !Ref PantrymonyApiGateway
+                        Path: /victuals
+                        Method: get
+#     GetMessage:
+#             Type: 'AWS::Serverless::Function'
+#             Properties:
+#                 Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetMessage
+#                 Runtime: dotnet6
+#                 Description: Lambda to return a message
+#                 MemorySize: 512
+#                 Timeout: 60
+#                 Events:
+#                     GetVictualsApi:
+#                         Type: Api
+#                         Properties:
+# #                             RestApiId: !Ref PantrymonyApiGateway
+#                             Path: /
+#                             Method: get
+    DeleteVictual:
+            Type: 'AWS::Serverless::Function'
+            Properties:
+                Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::DeleteVictual
+                Runtime: dotnet6
+                Description: Lambda to return a message
+                MemorySize: 512
+                Timeout: 60
+                Events:
+                    GetVictualsApi:
+                        Type: Api
+                        Properties:
+                            Path: /
+                            Method: delete
+                            RequestParameters:
+                                - method.request.querystring.id:
+                                    Required: true
+                                                
+# Outputs:
+#   ApiUrl:
+#     Description: URL of your API endpoint
+#     Value: !Join
+#       - ''
+#       - - https://
+#         - !Ref PantrymonyApiGateway
+#         - '.execute-api.'
+#         - !Ref 'AWS::Region'
+#         - '.amazonaws.com/dev'           

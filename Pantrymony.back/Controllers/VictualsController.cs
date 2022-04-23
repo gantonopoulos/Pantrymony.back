@@ -1,4 +1,3 @@
-using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Pantrymony.back.Model;
 
@@ -18,7 +17,7 @@ public class VictualsController: ControllerBase
     [HttpGet(Name = "GetVictuals")]
     public ActionResult<IEnumerable<Victual>> Get()
     {
-        return DataSource.Data.ToArray();
+        return Ok(src.ApiFunctions.GetVictuals());
     }
 
     [HttpGet("{id}")]
@@ -46,6 +45,7 @@ public class VictualsController: ControllerBase
 
         return NoContent();
     }
+    
     [HttpPost]
     public ActionResult<Victual> PostVictual(Victual victual)
     {
