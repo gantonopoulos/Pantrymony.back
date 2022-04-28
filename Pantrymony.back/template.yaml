@@ -1,7 +1,52 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Lambda to API-Gateway endpoints mapper for Pantrimony
+
+Parameters:
+    stage:
+        Type: String
+        Default: dev
+    region:
+        Type: String
+        Default: eu-central-1
+    account:
+        Type: String
+        Default: '926574008245'
+        
+Globals:
+  Function:
+      Environment:
+            Variables:
+                VICTUALS_TABLE: !Sub "Victuals-${stage}"
+    
 Resources:
+    VictualsTable:
+        Type: AWS::DynamoDB::Table
+        Properties: 
+            KeySchema:
+                - AttributeName: UserId
+                  KeyType: HASH
+                - AttributeName: VictualId
+                  KeyType: RANGE
+            AttributeDefinitions:
+                - AttributeName: UserId
+                  AttributeType: S
+                - AttributeName: VictualId
+                  AttributeType: S
+                - AttributeName: Expires
+                  AttributeType: S
+            BillingMode: PAY_PER_REQUEST
+            TableName: Victuals-dev
+            LocalSecondaryIndexes:
+                - IndexName: Expiration_Index
+                  KeySchema:
+                    - AttributeName: UserId
+                      KeyType: HASH
+                    - AttributeName: Expires
+                      KeyType: RANGE                                  
+                  Projection:
+                    ProjectionType: ALL                  
+                     
     GetVictuals:
         Type: 'AWS::Serverless::Function'
         Properties:
@@ -14,24 +59,16 @@ Resources:
                 GetVictualsApi:
                     Type: Api
                     Properties:
-#                         RestApiId: !Ref PantrymonyApiGateway
                         Path: /victuals
                         Method: get
-#     GetMessage:
-#             Type: 'AWS::Serverless::Function'
-#             Properties:
-#                 Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetMessage
-#                 Runtime: dotnet6
-#                 Description: Lambda to return a message
-#                 MemorySize: 512
-#                 Timeout: 60
-#                 Events:
-#                     GetVictualsApi:
-#                         Type: Api
-#                         Properties:
-# #                             RestApiId: !Ref PantrymonyApiGateway
-#                             Path: /
-#                             Method: get
+            Policies:
+                - Statement:
+                        - Sid:  DescribeTablesPolicy
+                          Effect: Allow
+                          Action:
+                          - dynamodb:DescribeTable
+                          - dynamodb:Scan
+                          Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
     DeleteVictual:
             Type: 'AWS::Serverless::Function'
             Properties:
@@ -49,6 +86,7 @@ Resources:
                             RequestParameters:
                                 - method.request.querystring.id:
                                     Required: true
+
                                                 
 # Outputs:
 #   ApiUrl:
