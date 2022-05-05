@@ -20,27 +20,39 @@ public class VictualsController: ControllerBase
         return Ok(src.ApiFunctions.GetVictuals());
     }
 
-    [HttpGet("{id}")]
-    public ActionResult<Victual?> GetVictualBy([FromRoute (Name = "id")] Guid id)
+    [HttpGet("{userId}")]
+    public ActionResult<Victual?> GetVictualsBy([FromRoute (Name = "userId")] string userId)
     {
-        var victual =  DataSource.Data.FirstOrDefault(entry => entry.Identifier == id);
+        var victual =  DataSource.Data.Where(entry => entry.UserId == userId);
+        return !victual.Any() ? NotFound() : Ok(victual);
+    }
+
+    [HttpGet("{userId}/{victualId}")]
+    public ActionResult<Victual?> GetVictualBy([FromRoute(Name = "userId")] string userId,
+        [FromRoute(Name = "victualId")] Guid victualId)
+    {
+        var victual = DataSource.Data.FirstOrDefault(entry => entry.UserId == userId && 
+                                                              entry.Identifier == victualId);
         return victual == default(Victual) ? NotFound() : Ok(victual);
     }
 
-    [HttpPut("{id}")]
-    public IActionResult PutTodoItem(Guid id, Victual victual)
+    [HttpPut("{userId}/{victualId}")]
+    public IActionResult PutVictual(
+        [FromRoute(Name = "userId")] string userId,
+        [FromRoute(Name = "victualId")] Guid victualId, 
+        Victual victual)
     {
-        if (id != victual.Identifier)
+        if (userId != victual.UserId || victualId != victual.Identifier)
         {
             return BadRequest();
         }
 
-        if (DataSource.Data.All(v => v.Identifier != id))
+        if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.Identifier == victualId))
         {
             return NotFound(victual);
         }
 
-        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(v => v.Identifier == id));
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.Identifier == victualId));
         DataSource.Data.Add(victual);
 
         return NoContent();
@@ -50,18 +62,19 @@ public class VictualsController: ControllerBase
     public ActionResult<Victual> PostVictual(Victual victual)
     {
         DataSource.Data.Add(victual);
-        return CreatedAtAction(nameof(GetVictualBy), new { id = victual.Identifier }, victual);
+        return CreatedAtAction(nameof(PostVictual), victual);
     }
 
-    [HttpDelete("{id}")]
-    public IActionResult DeleteVictual(Guid id)
+    [HttpDelete("{userId}/{victualId}")]
+    public IActionResult DeleteVictual([FromRoute(Name = "userId")] string userId,
+        [FromRoute(Name = "victualId")] Guid victualId)
     {
-        if (DataSource.Data.All(v => v.Identifier != id))
+        if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.Identifier == victualId))
         {
             return NotFound();
         }
 
-        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(v => v.Identifier == id));
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.Identifier == victualId));
 
         return NoContent();
     }

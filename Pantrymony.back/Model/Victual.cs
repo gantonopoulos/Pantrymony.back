@@ -46,7 +46,10 @@ public class UnitConverter : IPropertyConverter
 
     public object FromEntry(DynamoDBEntry entry)
     {
-        return new Unit(entry.AsString());
+        var applicableUnit = Unit.SupportedUnits.SingleOrDefault(unit => unit.Symbol == entry.AsString());
+        if (applicableUnit == null)
+            throw new ArgumentOutOfRangeException($"No unit with Symbol:[{entry.AsString()}] exists!");
+        return applicableUnit;
     }
 }
 
