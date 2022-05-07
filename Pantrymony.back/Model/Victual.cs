@@ -9,9 +9,12 @@ public class DateTimeConverter : IPropertyConverter
 {
     public DynamoDBEntry ToEntry(object? value)
     {
-        return value is not DateTime valueAsDate
-            ? new DynamoDBNull()
-            : valueAsDate.ToString(CultureInfo.InvariantCulture);
+        return value switch
+        {
+            string dateAsString => dateAsString,
+            DateTime valueAsDate => valueAsDate.ToString(CultureInfo.InvariantCulture),
+            _ => new DynamoDBNull()
+        };
     }
 
     public object FromEntry(DynamoDBEntry entry)
@@ -24,10 +27,14 @@ public class GuidConverter : IPropertyConverter
 {
     public DynamoDBEntry ToEntry(object? value)
     {
-        return value is not Guid valueAsDate
-            ? new DynamoDBNull()
-            : valueAsDate.ToString();
+        return value switch
+        {
+            string guidStr => guidStr,
+            Guid valueAsGuid => valueAsGuid.ToString(),
+            _ => new DynamoDBNull()
+        };
     }
+
 
     public object FromEntry(DynamoDBEntry entry)
     {
@@ -39,14 +46,15 @@ public class UnitConverter : IPropertyConverter
 {
     public DynamoDBEntry ToEntry(object? value)
     {
-        return value is not Unit valueAsDate
-            ? new DynamoDBNull()
-            : valueAsDate.Name;
+        if(value is not string unitSymbol ||
+           !Unit.SupportedUnits.Any(unit => unit.Symbol.Equals(unitSymbol)))
+            return new DynamoDBNull();
+        return unitSymbol;
     }
 
     public object FromEntry(DynamoDBEntry entry)
     {
-        var applicableUnit = Unit.SupportedUnits.SingleOrDefault(unit => unit.Symbol == entry.AsString());
+        var applicableUnit = Unit.SupportedUnits.SingleOrDefault(unit => unit.Symbol.Equals(entry.AsString()));
         if (applicableUnit == null)
             throw new ArgumentOutOfRangeException($"No unit with Symbol:[{entry.AsString()}] exists!");
         return applicableUnit;
@@ -57,7 +65,7 @@ public class UnitConverter : IPropertyConverter
 public class Victual
 {
     [DynamoDBRangeKey("VictualId", typeof(GuidConverter))]
-    public Guid Identifier { get; set; }
+    public Guid VictualId { get; set; }
     
     [DynamoDBHashKey("UserId")]
     public string UserId { get; set; }
@@ -88,5 +96,5 @@ public class Victual
     public DateTime Expires { get; set; }
     
     [DynamoDBProperty("Unit", typeof(UnitConverter))]
-    public Unit Unit { get; set; }
+    public string Unit { get; set; }
 }

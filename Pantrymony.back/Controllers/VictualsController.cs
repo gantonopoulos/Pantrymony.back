@@ -32,7 +32,7 @@ public class VictualsController: ControllerBase
         [FromRoute(Name = "victualId")] Guid victualId)
     {
         var victual = DataSource.Data.FirstOrDefault(entry => entry.UserId == userId && 
-                                                              entry.Identifier == victualId);
+                                                              entry.VictualId == victualId);
         return victual == default(Victual) ? NotFound() : Ok(victual);
     }
 
@@ -42,17 +42,17 @@ public class VictualsController: ControllerBase
         [FromRoute(Name = "victualId")] Guid victualId, 
         Victual victual)
     {
-        if (userId != victual.UserId || victualId != victual.Identifier)
+        if (userId != victual.UserId || victualId != victual.VictualId)
         {
             return BadRequest();
         }
 
-        if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.Identifier == victualId))
+        if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.VictualId == victualId))
         {
             return NotFound(victual);
         }
 
-        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.Identifier == victualId));
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.VictualId == victualId));
         DataSource.Data.Add(victual);
 
         return NoContent();
@@ -69,12 +69,12 @@ public class VictualsController: ControllerBase
     public IActionResult DeleteVictual([FromRoute(Name = "userId")] string userId,
         [FromRoute(Name = "victualId")] Guid victualId)
     {
-        if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.Identifier == victualId))
+        if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.VictualId == victualId))
         {
             return NotFound();
         }
 
-        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.Identifier == victualId));
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.VictualId == victualId));
 
         return NoContent();
     }

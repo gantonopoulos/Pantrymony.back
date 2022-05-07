@@ -63,31 +63,146 @@ Resources:
                         Method: get
             Policies:
                 - Statement:
-                        - Sid:  DescribeTablesPolicy
+                        - Sid:  GetVictualsPolicy
                           Effect: Allow
                           Action:
                           - dynamodb:DescribeTable
                           - dynamodb:Scan
-                          Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+                          Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'                          
     DeleteVictual:
             Type: 'AWS::Serverless::Function'
             Properties:
                 Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::DeleteVictual
                 Runtime: dotnet6
-                Description: Lambda to return a message
+                Description: Lambda to delete a victual
                 MemorySize: 512
                 Timeout: 60
                 Events:
                     GetVictualsApi:
                         Type: Api
                         Properties:
-                            Path: /
+                            Path: /victuals/{userId}/{victualId}
                             Method: delete
                             RequestParameters:
-                                - method.request.querystring.id:
+                                - method.request.path.userId:
                                     Required: true
+                                - method.request.path.victualId:
+                                    Required: true
+                Policies:
+                  - Statement:
+                      - Sid:  DeleteVictualPolicy
+                        Effect: Allow
+                        Action:
+                          - dynamodb:DescribeTable
+                          - dynamodb:DeleteItem
+                        Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+                        
+    GetUserVictuals:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetVictualsOfUser
+        Runtime: dotnet6
+        Description: A Lambda to return the victuals registered under a certain user
+        MemorySize: 512
+        Timeout: 60
+        Events:
+          GetVictualsApi:
+            Type: Api
+            Properties:
+              Path: /victuals/{userId}
+              Method: get
+              RequestParameters:
+                - method.request.path.userId:
+                    Required: true
+        Policies:
+          - Statement:
+              - Sid: GetVictualsOfUserPolicy
+                Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:Query
+                Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+                
+    GetUserVictual:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetVictual
+        Runtime: dotnet6
+        Description: A Lambda to return the victuals registered under a certain user with a certain victualId
+        MemorySize: 512
+        Timeout: 60
+        Events:
+          GetVictualsApi:
+            Type: Api
+            Properties:
+              Path: /victuals/{userId}/{victualId}
+              Method: get
+              RequestParameters:
+                - method.request.path.userId:
+                    Required: true
+                - method.request.path.victualId:
+                    Required: true
+        Policies:
+          - Statement:
+              - Sid: GetVictualPolicy
+                Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:Scan
+                Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+                
+    PostVictual:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PostVictual
+        Runtime: dotnet6
+        Description: Lambda handler inserting a new Victual in the db 
+        MemorySize: 512
+        Timeout: 60
+        Events:
+          GetVictualsApi:
+            Type: Api
+            Properties:
+              Path: /victuals
+              Method: post
+        Policies:
+          - Statement:
+              - Sid:  PostVictualPolicy
+                Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:UpdateItem
+                Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+                
+    PutVictual:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PutVictual
+        Runtime: dotnet6
+        Description: Lambda handler inserting a new Victual in the db
+        MemorySize: 512
+        Timeout: 60
+        Events:
+          GetVictualsApi:
+            Type: Api
+            Properties:
+              Path: /victuals/{userId}/{victualId}
+              Method: put
+              RequestParameters:
+                - method.request.path.userId:
+                    Required: true
+                - method.request.path.victualId:
+                    Required: true        
+        Policies:
+          - Statement:
+              - Sid:  PutVictualPolicy
+                Effect: Allow
+                Action:
+                  - dynamodb:DescribeTable
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
 
-                                                
 # Outputs:
 #   ApiUrl:
 #     Description: URL of your API endpoint
