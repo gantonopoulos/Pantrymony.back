@@ -20,6 +20,23 @@ Globals:
                 VICTUALS_TABLE: !Sub "Victuals-${stage}"
     
 Resources:
+    MyApi:
+      Type: AWS::Serverless::Api
+      Properties:
+        StageName: Prod
+        Auth:
+          DefaultAuthorizer: MyLambdaTokenAuthorizer
+          Authorizers:
+            MyLambdaTokenAuthorizer:
+              FunctionArn: !GetAtt AuthenticateUser.Arn
+              
+    AuthenticateUser:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: Pantrymony.back::Pantrymony.back.Lambda.Authentication::AuthenticateAsync
+        Runtime: dotnet6
+        Description: Lambda handler for authentication
+      
     VictualsTable:
         Type: AWS::DynamoDB::Table
         Properties: 
@@ -87,6 +104,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
+              RestApiId: !Ref MyApi
               Path: /victuals
               Method: get
               RequestParameters:
