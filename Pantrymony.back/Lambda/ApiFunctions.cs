@@ -15,39 +15,48 @@ namespace Pantrymony.back.Lambda;
 public class ApiFunctions
 {
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<IEnumerable<Victual>> GetVictuals(APIGatewayProxyRequest _, ILambdaContext context)
+    public static async Task<IEnumerable<Victual>> GetVictuals(APIGatewayProxyRequest request, ILambdaContext context)
     {
         await ValidateTableExistsAsync();
         var client = new AmazonDynamoDBClient();
         var dbContext = new DynamoDBContext(client);
-        return await dbContext.ScanAsync<Victual>(Enumerable.Empty<ScanCondition>()).GetRemainingAsync();
+        const string userIdTag = "userId";
+        const string victualIdTag = "victualId";
+        IEnumerable<Victual> result;
+
+        if ( request.QueryStringParameters != null &&
+             request.QueryStringParameters.TryGetValue(userIdTag, out var userId) && 
+             userId is not null)
+        {
+            if (request.QueryStringParameters.TryGetValue(victualIdTag, out var victualId) && 
+                victualId is not null)
+            {
+                context.Logger.LogInformation($"Requesting victual [{victualId}] for user [{userId}]");
+                result = await GetVictual(dbContext, userId, victualId);
+                context.Logger.LogInformation($"Found {result.Count()} victuals");
+                return result;
+            }
+
+            context.Logger.LogInformation($"Requesting victuals for user [{userId}]");
+            result = await dbContext.QueryAsync<Victual>(userId).GetRemainingAsync();
+            context.Logger.LogInformation($"Found {result.Count()} victuals");
+            return result;
+        }
+
+        context.Logger.LogInformation($"Requesting all victuals.");
+        result = await dbContext.ScanAsync<Victual>(Enumerable.Empty<ScanCondition>()).GetRemainingAsync();
+        context.Logger.LogInformation($"Found {result.Count()} victuals");
+
+        return result;
     }
 
-    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<IEnumerable<Victual>> GetVictualsOfUser(
-        APIGatewayProxyRequest request,
-        ILambdaContext context)
+    public static async Task<IEnumerable<Victual>> GetVictual(DynamoDBContext dbContext, string userId, string victualId)
     {
-        await ValidateTableExistsAsync();
-        var client = new AmazonDynamoDBClient();
-        var dbContext = new DynamoDBContext(client);
-        context.Logger.LogLine($"Requesting victuals for user [{request.PathParameters["userId"]}]");
-        var victuals = await dbContext.QueryAsync<Victual>(request.PathParameters["userId"]).GetRemainingAsync();
-        context.Logger.LogLine($"Found {victuals.Count} victuals");
-        return victuals;
-    }
-
-    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<Victual?> GetVictual(APIGatewayProxyRequest request,
-        ILambdaContext context)
-    {
-        await ValidateTableExistsAsync();
-        var client = new AmazonDynamoDBClient();
-        var dbContext = new DynamoDBContext(client);
-        var victuals = await dbContext.QueryAsync<Victual>(request.PathParameters["userId"],
+        return await dbContext.QueryAsync<Victual>(
+                userId,
             QueryOperator.Equal,
-            new[] { request.PathParameters["victualId"] }).GetRemainingAsync();
-        return victuals.SingleOrDefault();
+            new[] { victualId })
+            .GetRemainingAsync();
     }
 
 
@@ -78,11 +87,11 @@ public class ApiFunctions
             await ValidateTableExistsAsync();
             var client = new AmazonDynamoDBClient();
             var dbContext = new DynamoDBContext(client);
-            context.Logger.LogInformation($"Deleting victual [{request.PathParameters["victualId"]}] of user" +
-                                          $"[{request.PathParameters["userId"]}]");
+            context.Logger.LogInformation($"Deleting victual [{request.QueryStringParameters["victualId"]}] of user" +
+                                          $"[{request.QueryStringParameters["userId"]}]");
             await dbContext.DeleteAsync<Victual>(
-                request.PathParameters["userId"],
-                request.PathParameters["victualId"]);
+                request.QueryStringParameters["userId"],
+                request.QueryStringParameters["victualId"]);
             context.Logger.LogInformation("Delete successful");
         }
         catch (Exception e)
@@ -134,12 +143,12 @@ public class ApiFunctions
             
             
             context.Logger.LogInformation($"Updating victual " +
-                                          $"[{request.PathParameters["victualId"]}] of user" +
-                                          $"[{request.PathParameters["userId"]}]");
+                                          $"[{request.QueryStringParameters["victualId"]}] of user" +
+                                          $"[{request.QueryStringParameters["userId"]}]");
             var newVictual = JsonSerializer.Deserialize<Victual>(request.Body);
             var storedVictual = await dbContext.LoadAsync<Victual>(
-                request.PathParameters["userId"],
-                request.PathParameters["victualId"]);
+                request.QueryStringParameters["userId"],
+                request.QueryStringParameters["victualId"]);
 
             if (storedVictual == null)
             {

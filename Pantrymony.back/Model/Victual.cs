@@ -57,7 +57,7 @@ public class UnitConverter : IPropertyConverter
         var applicableUnit = Unit.SupportedUnits.SingleOrDefault(unit => unit.Symbol.Equals(entry.AsString()));
         if (applicableUnit == null)
             throw new ArgumentOutOfRangeException($"No unit with Symbol:[{entry.AsString()}] exists!");
-        return applicableUnit;
+        return applicableUnit.Symbol;
     }
 }
 
