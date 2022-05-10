@@ -171,4 +171,11 @@ public class ApiFunctions
 
         return HttpStatusCode.Created.AsApiGatewayProxyResponse();
     }
+
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    public static async Task<APIGatewayProxyResponse> GetUnits(APIGatewayProxyRequest request, ILambdaContext context)
+    {
+        context.Logger.LogInformation("Requesting supported units.");
+        return await Task.Run(()=> Unit.SupportedUnits.AsOkGetResponse());
+    }
 }
