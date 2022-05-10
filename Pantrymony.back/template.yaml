@@ -20,16 +20,16 @@ Globals:
                 VICTUALS_TABLE: !Sub "Victuals-${stage}"
     
 Resources:
-    MyApi:
+    PantrymonyApi:
       Type: AWS::Serverless::Api
       Properties:
         StageName: Prod
         Auth:
-          DefaultAuthorizer: MyLambdaTokenAuthorizer
+          DefaultAuthorizer: LambdaTokenAuthorizer
           Authorizers:
-            MyLambdaTokenAuthorizer:
+            LambdaTokenAuthorizer:
               FunctionArn: !GetAtt AuthenticateUser.Arn
-              
+
     AuthenticateUser:
       Type: 'AWS::Serverless::Function'
       Properties:
@@ -64,6 +64,7 @@ Resources:
                   Projection:
                     ProjectionType: ALL                  
                      
+    
     DeleteVictual:
             Type: 'AWS::Serverless::Function'
             Properties:
@@ -76,6 +77,7 @@ Resources:
                     GetVictualsApi:
                         Type: Api
                         Properties:
+                            RestApiId: !Ref PantrymonyApi
                             Path: /victuals
                             Method: delete
                             RequestParameters:
@@ -104,7 +106,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
-              RestApiId: !Ref MyApi
+              RestApiId: !Ref PantrymonyApi
               Path: /victuals
               Method: get
               RequestParameters:
@@ -134,6 +136,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
+              RestApiId: !Ref PantrymonyApi
               Path: /victuals
               Method: post
         Policies:
@@ -157,6 +160,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
+              RestApiId: !Ref PantrymonyApi
               Path: /victuals
               Method: put
               RequestParameters:

@@ -15,7 +15,7 @@ namespace Pantrymony.back.Lambda;
 public class ApiFunctions
 {
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<IEnumerable<Victual>> GetVictuals(APIGatewayProxyRequest request, ILambdaContext context)
+    public static async Task<APIGatewayProxyResponse> GetVictuals(APIGatewayProxyRequest request, ILambdaContext context)
     {
         await ValidateTableExistsAsync();
         var client = new AmazonDynamoDBClient();
@@ -34,23 +34,22 @@ public class ApiFunctions
                 context.Logger.LogInformation($"Requesting victual [{victualId}] for user [{userId}]");
                 result = await GetVictual(dbContext, userId, victualId);
                 context.Logger.LogInformation($"Found {result.Count()} victuals");
-                return result;
+                return result.AsOkGetResponse();
             }
 
             context.Logger.LogInformation($"Requesting victuals for user [{userId}]");
             result = await dbContext.QueryAsync<Victual>(userId).GetRemainingAsync();
             context.Logger.LogInformation($"Found {result.Count()} victuals");
-            return result;
+            return result.AsOkGetResponse();
         }
 
         context.Logger.LogInformation($"Requesting all victuals.");
         result = await dbContext.ScanAsync<Victual>(Enumerable.Empty<ScanCondition>()).GetRemainingAsync();
         context.Logger.LogInformation($"Found {result.Count()} victuals");
-
-        return result;
+        return result.AsOkGetResponse();
     }
 
-    public static async Task<IEnumerable<Victual>> GetVictual(DynamoDBContext dbContext, string userId, string victualId)
+    private static async Task<IEnumerable<Victual>> GetVictual(DynamoDBContext dbContext, string userId, string victualId)
     {
         return await dbContext.QueryAsync<Victual>(
                 userId,
@@ -97,7 +96,7 @@ public class ApiFunctions
         catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
-            return HttpStatusCode.BadRequest.AsApiGatewayProxyResponse();
+            return e.Message.AsResponse(HttpStatusCode.BadRequest);
         }
 
         return HttpStatusCode.Accepted.AsApiGatewayProxyResponse();
@@ -124,7 +123,7 @@ public class ApiFunctions
         catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
-            return HttpStatusCode.BadRequest.AsApiGatewayProxyResponse();
+            return e.Message.AsResponse(HttpStatusCode.BadRequest);
         }
 
         return HttpStatusCode.Created.AsApiGatewayProxyResponse();
@@ -167,7 +166,7 @@ public class ApiFunctions
         catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
-            return HttpStatusCode.BadRequest.AsApiGatewayProxyResponse();
+            return e.Message.AsResponse(HttpStatusCode.BadRequest);
         }
 
         return HttpStatusCode.Created.AsApiGatewayProxyResponse();
