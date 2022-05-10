@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Pantrymony.back.Model;
 
@@ -14,32 +15,33 @@ public class VictualsController: ControllerBase
         _logger = logger;
     }
     
-    [HttpGet(Name = "GetVictuals")]
+    [HttpGet("/victuals")]
     public ActionResult<IEnumerable<Victual>> Get()
     {
         return Ok(src.ApiFunctions.GetVictuals());
     }
 
-    [HttpGet("{userId}")]
-    public ActionResult<Victual?> GetVictualsBy([FromRoute (Name = "userId")] string userId)
+    [HttpGet("/uservictuals")]
+    public ActionResult<Victual?> GetVictualsBy([FromQuery] string userId)
     {
         var victual =  DataSource.Data.Where(entry => entry.UserId == userId);
         return !victual.Any() ? NotFound() : Ok(victual);
     }
 
-    [HttpGet("{userId}/{victualId}")]
-    public ActionResult<Victual?> GetVictualBy([FromRoute(Name = "userId")] string userId,
-        [FromRoute(Name = "victualId")] Guid victualId)
+    [HttpGet("/uservictual")]
+    public ActionResult<Victual?> GetVictualBy(
+        [FromQuery] string userId,
+        [FromQuery] Guid victualId)
     {
         var victual = DataSource.Data.FirstOrDefault(entry => entry.UserId == userId && 
                                                               entry.VictualId == victualId);
         return victual == default(Victual) ? NotFound() : Ok(victual);
     }
 
-    [HttpPut("{userId}/{victualId}")]
+    [HttpPut("/updatevictual")]
     public IActionResult PutVictual(
-        [FromRoute(Name = "userId")] string userId,
-        [FromRoute(Name = "victualId")] Guid victualId, 
+        [FromQuery] string userId,
+        [FromQuery] Guid victualId, 
         Victual victual)
     {
         if (userId != victual.UserId || victualId != victual.VictualId)
@@ -52,22 +54,22 @@ public class VictualsController: ControllerBase
             return NotFound(victual);
         }
 
-        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && entry.VictualId == victualId));
+        DataSource.Data.RemoveAt(DataSource.Data.FindIndex(entry => entry.UserId == userId && 
+                                                                    entry.VictualId == victualId));
         DataSource.Data.Add(victual);
 
         return NoContent();
     }
     
-    [HttpPost]
+    [HttpPost("/createvictual")]
     public ActionResult<Victual> PostVictual(Victual victual)
     {
         DataSource.Data.Add(victual);
         return CreatedAtAction(nameof(PostVictual), victual);
     }
 
-    [HttpDelete("{userId}/{victualId}")]
-    public IActionResult DeleteVictual([FromRoute(Name = "userId")] string userId,
-        [FromRoute(Name = "victualId")] Guid victualId)
+    [HttpDelete("/deletevictual")]
+    public IActionResult DeleteVictual([FromQuery] string userId, [FromQuery] Guid victualId)
     {
         if (!DataSource.Data.Any(entry=> entry.UserId == userId && entry.VictualId == victualId))
         {

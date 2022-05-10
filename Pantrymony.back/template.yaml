@@ -20,15 +20,15 @@ Globals:
                 VICTUALS_TABLE: !Sub "Victuals-${stage}"
     
 Resources:
-    PantrymonyApi:
-      Type: AWS::Serverless::Api
-      Properties:
-        StageName: Prod
-        Auth:
-          DefaultAuthorizer: LambdaTokenAuthorizer
-          Authorizers:
-            LambdaTokenAuthorizer:
-              FunctionArn: !GetAtt AuthenticateUser.Arn
+#    PantrymonyApi:
+#      Type: AWS::Serverless::Api
+#      Properties:
+#        StageName: Prod
+#        Auth:
+#          DefaultAuthorizer: LambdaTokenAuthorizer
+#          Authorizers:
+#            LambdaTokenAuthorizer:
+#              FunctionArn: !GetAtt AuthenticateUser.Arn
 
     AuthenticateUser:
       Type: 'AWS::Serverless::Function'
@@ -77,7 +77,7 @@ Resources:
                     GetVictualsApi:
                         Type: Api
                         Properties:
-                            RestApiId: !Ref PantrymonyApi
+#                            RestApiId: !Ref PantrymonyApi
                             Path: /victuals
                             Method: delete
                             RequestParameters:
@@ -106,7 +106,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
-              RestApiId: !Ref PantrymonyApi
+#              RestApiId: !Ref PantrymonyApi
               Path: /victuals
               Method: get
               RequestParameters:
@@ -136,7 +136,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
-              RestApiId: !Ref PantrymonyApi
+#              RestApiId: !Ref PantrymonyApi
               Path: /victuals
               Method: post
         Policies:
@@ -160,7 +160,7 @@ Resources:
           GetVictualsApi:
             Type: Api
             Properties:
-              RestApiId: !Ref PantrymonyApi
+#              RestApiId: !Ref PantrymonyApi
               Path: /victuals
               Method: put
               RequestParameters:
@@ -178,6 +178,22 @@ Resources:
                   - dynamodb:UpdateItem
                 Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
 
+    GetUnits:
+      Type: 'AWS::Serverless::Function'
+      Properties:
+        Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUnits
+        Runtime: dotnet6
+        Description: A Lambda to return the supported units
+        MemorySize: 512
+        Timeout: 60
+        Events:
+          GetVictualsApi:
+            Type: Api
+            Properties:
+#              RestApiId: !Ref PantrymonyApi
+              Path: /units
+              Method: get
+              
 #Outputs:
 #  PantrymonyApi:
 #    Description: URL of your API endpoint
