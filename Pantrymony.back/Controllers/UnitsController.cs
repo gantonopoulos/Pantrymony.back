@@ -7,7 +7,7 @@ namespace Pantrymony.back.Controllers;
 [Route("[controller]")]
 public class UnitsController : ControllerBase
 {
-    [HttpGet(Name = "GetUnits")]
+    [HttpGet("/units")]
     public ActionResult<IEnumerable<Unit>> Get()
     {
         return Ok(Unit.SupportedUnits);

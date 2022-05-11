@@ -22,10 +22,10 @@ public class VictualsController: ControllerBase
     }
 
     [HttpGet("/uservictuals")]
-    public ActionResult<Victual?> GetVictualsBy([FromQuery] string userId)
+    public ActionResult<IEnumerable<Victual>> GetVictualsBy([FromQuery] string userId)
     {
         var victual =  DataSource.Data.Where(entry => entry.UserId == userId);
-        return !victual.Any() ? NotFound() : Ok(victual);
+        return  Ok(victual);
     }
 
     [HttpGet("/uservictual")]

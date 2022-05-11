@@ -15,49 +15,51 @@ namespace Pantrymony.back.Lambda;
 public class ApiFunctions
 {
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<APIGatewayProxyResponse> GetVictuals(APIGatewayProxyRequest request, ILambdaContext context)
+    public static async Task<APIGatewayProxyResponse> GetVictuals(
+        APIGatewayProxyRequest request, 
+        ILambdaContext context)
     {
         await ValidateTableExistsAsync();
-        var client = new AmazonDynamoDBClient();
-        var dbContext = new DynamoDBContext(client);
-        const string userIdTag = "userId";
-        const string victualIdTag = "victualId";
-        IEnumerable<Victual> result;
-
-        if ( request.QueryStringParameters != null &&
-             request.QueryStringParameters.TryGetValue(userIdTag, out var userId) && 
-             userId is not null)
-        {
-            if (request.QueryStringParameters.TryGetValue(victualIdTag, out var victualId) && 
-                victualId is not null)
-            {
-                context.Logger.LogInformation($"Requesting victual [{victualId}] for user [{userId}]");
-                result = await GetVictual(dbContext, userId, victualId);
-                context.Logger.LogInformation($"Found {result.Count()} victuals");
-                return result.AsOkGetResponse();
-            }
-
-            context.Logger.LogInformation($"Requesting victuals for user [{userId}]");
-            result = await dbContext.QueryAsync<Victual>(userId).GetRemainingAsync();
-            context.Logger.LogInformation($"Found {result.Count()} victuals");
-            return result.AsOkGetResponse();
-        }
+        var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
 
         context.Logger.LogInformation($"Requesting all victuals.");
-        result = await dbContext.ScanAsync<Victual>(Enumerable.Empty<ScanCondition>()).GetRemainingAsync();
+        IEnumerable<Victual> result = await dbContext.ScanAsync<Victual>(Enumerable.Empty<ScanCondition>()).GetRemainingAsync();
         context.Logger.LogInformation($"Found {result.Count()} victuals");
         return result.AsOkGetResponse();
     }
 
-    private static async Task<IEnumerable<Victual>> GetVictual(DynamoDBContext dbContext, string userId, string victualId)
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    private static async Task<IEnumerable<Victual>> GetUserVictual(
+        APIGatewayProxyRequest request,
+        ILambdaContext context)
     {
-        return await dbContext.QueryAsync<Victual>(
-                userId,
-            QueryOperator.Equal,
-            new[] { victualId })
+        await ValidateTableExistsAsync();
+        var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
+        var userId = request.QueryStringParameters["userId"];
+        var victualId = request.QueryStringParameters["victualId"];
+
+        context.Logger.LogInformation($"Requesting victual [{victualId}] for user [{userId}]");
+        var result = await dbContext.QueryAsync<Victual>(
+                userId, QueryOperator.Equal, new[] { victualId })
             .GetRemainingAsync();
+        context.Logger.LogInformation($"Found {result.Count()} victuals");
+        return result;
     }
 
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    public static async Task<APIGatewayProxyResponse> GetUserVictuals(
+        APIGatewayProxyRequest request,
+        ILambdaContext context)
+    {
+        await ValidateTableExistsAsync();
+        var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
+        var userId = request.QueryStringParameters["userId"];
+
+        context.Logger.LogInformation($"Requesting victuals for user [{userId}]");
+        IEnumerable<Victual> result = await dbContext.QueryAsync<Victual>(userId).GetRemainingAsync();
+        context.Logger.LogInformation($"Found {result.Count()} victuals");
+        return result.AsOkGetResponse();
+    }
 
     private static async Task ValidateTableExistsAsync()
     {
@@ -141,9 +143,8 @@ public class ApiFunctions
             var dbContext = new DynamoDBContext(client);
             
             
-            context.Logger.LogInformation($"Updating victual " +
-                                          $"[{request.QueryStringParameters["victualId"]}] of user" +
-                                          $"[{request.QueryStringParameters["userId"]}]");
+            context.Logger.LogInformation(
+                $"Updating victual [{request.QueryStringParameters["victualId"]}] of user[{request.QueryStringParameters["userId"]}]");
             var newVictual = JsonSerializer.Deserialize<Victual>(request.Body);
             var storedVictual = await dbContext.LoadAsync<Victual>(
                 request.QueryStringParameters["userId"],
