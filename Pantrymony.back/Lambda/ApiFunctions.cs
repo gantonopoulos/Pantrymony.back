@@ -58,7 +58,7 @@ public class ApiFunctions
         context.Logger.LogInformation($"Requesting victuals for user [{userId}]");
         IEnumerable<Victual> result = await dbContext.QueryAsync<Victual>(userId).GetRemainingAsync();
         context.Logger.LogInformation($"Found {result.Count()} victuals");
-        return result.AsOkGetResponse();
+        return result.AsOkGetResponse().Log(context.Logger);
     }
 
     private static async Task ValidateTableExistsAsync()
@@ -144,7 +144,8 @@ public class ApiFunctions
             
             
             context.Logger.LogInformation(
-                $"Updating victual [{request.QueryStringParameters["victualId"]}] of user[{request.QueryStringParameters["userId"]}]");
+                $"Updating victual [{request.QueryStringParameters["victualId"]}] of user[{request.QueryStringParameters["userId"]}] to:\n" +
+                $"{request.Body}");
             var newVictual = JsonSerializer.Deserialize<Victual>(request.Body);
             var storedVictual = await dbContext.LoadAsync<Victual>(
                 request.QueryStringParameters["userId"],
@@ -153,7 +154,7 @@ public class ApiFunctions
             if (storedVictual == null)
             {
                 context.Logger.LogInformation("No victual found to update.");
-                return HttpStatusCode.NotFound.AsApiGatewayProxyResponse();
+                return HttpStatusCode.NotFound.AsApiGatewayProxyResponse().Log(context.Logger);
             }
             
             if (newVictual == null || 
@@ -167,16 +168,24 @@ public class ApiFunctions
         catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
-            return e.Message.AsResponse(HttpStatusCode.BadRequest);
+            return e.Message.AsResponse(HttpStatusCode.BadRequest).Log(context.Logger);
         }
 
-        return HttpStatusCode.Created.AsApiGatewayProxyResponse();
+        return HttpStatusCode.Created.AsApiGatewayProxyResponse().Log(context.Logger);
     }
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     public static async Task<APIGatewayProxyResponse> GetUnits(APIGatewayProxyRequest request, ILambdaContext context)
     {
         context.Logger.LogInformation("Requesting supported units.");
-        return await Task.Run(()=> Unit.SupportedUnits.AsOkGetResponse());
+        return await Task.Run(()=> Unit.SupportedUnits.AsOkGetResponse().Log(context.Logger));
     }
+    
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    public static async Task<APIGatewayProxyResponse> Options(APIGatewayProxyRequest request, ILambdaContext context)
+    {
+        context.Logger.LogInformation("Options Request arrived!");
+        return await Task.Run(()=> HttpStatusCode.OK.AsApiGatewayProxyResponse().Log(context.Logger));
+    }
+
 }
