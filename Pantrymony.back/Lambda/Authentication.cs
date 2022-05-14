@@ -47,6 +47,7 @@ public class Authentication
         var statementOne = new APIGatewayCustomAuthorizerPolicy.IAMPolicyStatement();
         statementOne.Action = new HashSet<string>(){"execute-api:Invoke"};
         statementOne.Effect = effect;
+        // I should return all accessible lambdas (use "*") or activate caching
         statementOne.Resource = new HashSet<string>() { resource };
         policyDocument.Statement.Add(statementOne);
         authResponse.PolicyDocument = policyDocument;

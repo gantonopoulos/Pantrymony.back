@@ -3,32 +3,38 @@ Transform: AWS::Serverless-2016-10-31
 Description: Lambda to API-Gateway endpoints mapper for Pantrimony
 
 Parameters:
-    stage:
-        Type: String
-        Default: dev
-    region:
-        Type: String
-        Default: eu-central-1
-    account:
-        Type: String
-        Default: '926574008245'
-        
+  stage:
+    Type: String
+    Default: dev
+  region:
+    Type: String
+    Default: eu-central-1
+  account:
+    Type: String
+    Default: '926574008245'
+
 Globals:
   Function:
-      Environment:
-            Variables:
-                VICTUALS_TABLE: !Sub "Victuals-${stage}"
+    Environment:
+      Variables:
+        VICTUALS_TABLE: !Sub "Victuals-${stage}"
+  Api:
+    Cors:
+      AllowMethods: "'OPTIONS,DELETE,GET,HEAD,PATCH,POST,PUT'"
+      AllowHeaders: "'Content-Type, Authorization, X-Amz-Date, X-Api-Key, X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+      AllowCredentials: false      
     
 Resources:
   PantrymonyApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-      Auth:
-        DefaultAuthorizer: LambdaTokenAuthorizer
-        Authorizers:
-          LambdaTokenAuthorizer:
-            FunctionArn: !GetAtt AuthenticateUser.Arn
+#      Auth:
+#        DefaultAuthorizer: LambdaTokenAuthorizer
+#        Authorizers:
+#          LambdaTokenAuthorizer:
+#            FunctionArn: !GetAtt AuthenticateUser.Arn
   
   AuthenticateUser:
     Type: 'AWS::Serverless::Function'
@@ -76,7 +82,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-            #                            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /deletevictual
             Method: delete
             RequestParameters:
@@ -105,7 +111,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-            #              RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /victuals
             Method: get
       Policies:
@@ -130,7 +136,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-            #              RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /uservictuals
             Method: get
             RequestParameters:
@@ -157,7 +163,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-            #              RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /uservictual
             Method: get
             RequestParameters:
@@ -187,7 +193,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-            #              RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /createvictual
             Method: post
       Policies:
@@ -206,7 +212,7 @@ Resources:
       Runtime: dotnet6
       Description: Lambda handler inserting a new Victual in the db
       MemorySize: 512
-      Timeout: 60
+      Timeout: 120
       Events:
         GetVictualsApi:
           Type: Api
@@ -241,25 +247,25 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-            #              RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /units
             Method: get
 
-  Options:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::Options
-      Runtime: dotnet6
-      Description: A Lambda to return the supported units
-      MemorySize: 512
-      Timeout: 60
-      Events:
-        GetVictualsApi:
-          Type: Api
-          Properties:
-            #              RestApiId: !Ref PantrymonyApi
-            Path: /updatevictual
-            Method: options
+#  Options:
+#    Type: 'AWS::Serverless::Function'
+#    Properties:
+#      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::Options
+#      Runtime: dotnet6
+#      Description: A Lambda to return the supported units
+#      MemorySize: 512
+#      Timeout: 60
+#      Events:
+#        GetVictualsApi:
+#          Type: Api
+#          Properties:
+#            #              RestApiId: !Ref PantrymonyApi
+#            Path: /updatevictual
+#            Method: options
 
 #Outputs:
 #  PantrymonyApi:
