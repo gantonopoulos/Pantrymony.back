@@ -39,7 +39,7 @@ With the _access_token_ being asymmetric, we can verify it if we have the public
 
 We can get either by directly issuing a GET request to the URL of the **JSON Web Key Set** found in the **Advanced Settings->Endpoints** section of the OAuth application, or by processing the results of a GET request to the **OpenID Configuration** URL found in the same location (this is what I did). 
 
-### ID_toke verification
+### Id_token verification
 
 The id_token need not be verified, but if we need to, doing so depends on the **JSON Web Token (JWT) Signature Algorithm**. If it is symmetric, we need the secret key set in the main page of the OAuth-App configuration.
 
@@ -57,6 +57,7 @@ If we need to pass any information, e.g. access right, roles etc, from the front
 
 [Manually validating a JWT using .NET](https://www.jerriepelser.com/blog/manually-validating-rs256-jwt-dotnet/)
 
+[Accessing id_token in Blazor wasm](https://stackoverflow.com/questions/63105618/how-to-get-the-id-token-in-blazor-web-assembly)
 #### About OAuth claims
 
 [Scopes](https://auth0.com/docs/get-started/apis/scopes/openid-connect-scopes)
