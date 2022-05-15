@@ -1,7 +1,10 @@
 using System.Text.Json;
 using Amazon.Lambda.APIGatewayEvents;
+using System.IdentityModel.Tokens.Jwt;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Pantrymony.back.Lambda;
@@ -52,5 +55,35 @@ public class Authentication
         policyDocument.Statement.Add(statementOne);
         authResponse.PolicyDocument = policyDocument;
         return authResponse;
+    }
+    
+    private async Task<bool> ValidateAccessToken(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        try
+        {
+            IConfigurationManager<OpenIdConnectConfiguration> configurationManager = 
+                new ConfigurationManager<OpenIdConnectConfiguration>(
+                    $"https://gantonopoulos.eu.auth0.com/.well-known/openid-configuration", 
+                    new OpenIdConnectConfigurationRetriever());
+            OpenIdConnectConfiguration openIdConfig = await configurationManager.GetConfigurationAsync(CancellationToken.None);
+            var keys = openIdConfig.SigningKeys;
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateActor = false,
+                ValidateLifetime = false,
+                ValidateTokenReplay = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKeys = openIdConfig.SigningKeys,
+            }, out SecurityToken validatedToken);
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine($"{ex.Message}: {ex.StackTrace}");
+            return false;
+        }
+        return true;
     }
 }
