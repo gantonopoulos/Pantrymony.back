@@ -17,22 +17,22 @@ public class Authentication
         APIGatewayCustomAuthorizerRequest request, 
         ILambdaContext context)
     {
-        APIGatewayCustomAuthorizerResponse result;
+        APIGatewayCustomAuthorizerResponse response;
         var accessToken = request.AuthorizationToken.Split(' ')[1];
         context.Logger.LogInformation($"Authenticating user with token :[{accessToken}]");
         if (await ValidateAccessToken(accessToken, context.Logger))
         {
             context.Logger.LogInformation($"Authorized!");
-            result = GenerateResponse("user", "Allow", request.MethodArn);
+            response = GenerateResponse("user", "Allow", request.MethodArn);
         }
         else
         {
             context.Logger.LogInformation($"Denied!");
-            result = GenerateResponse("user", "Deny", request.MethodArn);
+            response = GenerateResponse("user", "Deny", request.MethodArn);
         }
         
-        context.Logger.LogInformation($"Generated response: [{JsonSerializer.Serialize(result)}]");
-        return result;
+        context.Logger.LogInformation($"Generated response: [{JsonSerializer.Serialize(response)}]");
+        return response;
     }
 
     private static APIGatewayCustomAuthorizerResponse GenerateResponse(string principalId, string effect,
@@ -61,12 +61,13 @@ public class Authentication
         {
             var oauthDomain = Environment.GetEnvironmentVariable("AUTH_DOMAIN")
                 .ThrowIfNull(new Exception($"Undefined environment variable: [AUTH_DOMAIN]!"));
+            var configurationUrl = $"https://{oauthDomain}/.well-known/openid-configuration";
+            
+            logger.LogInformation($"Fetching signing keys from {configurationUrl}");
             IConfigurationManager<OpenIdConnectConfiguration> configurationManager = 
-                new ConfigurationManager<OpenIdConnectConfiguration>(
-                    $"https://{oauthDomain}/.well-known/openid-configuration", 
+                new ConfigurationManager<OpenIdConnectConfiguration>(configurationUrl, 
                     new OpenIdConnectConfigurationRetriever());
             
-            logger.LogInformation($"Getting signing keys!");
             OpenIdConnectConfiguration openIdConfig = 
                 await configurationManager.GetConfigurationAsync(CancellationToken.None);
             var keys = openIdConfig.SigningKeys;
@@ -86,7 +87,7 @@ public class Authentication
         }
         catch(Exception ex)
         {
-            logger.LogError($"{ex.Message}: {ex.StackTrace}");
+            logger.LogError($"Access_Token validation failed:\n{ex.Message}: {ex.StackTrace}");
             return false;
         }
         return true;

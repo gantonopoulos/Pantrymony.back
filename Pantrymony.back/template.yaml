@@ -73,7 +73,7 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-    
+  
   DeleteVictual:
     Type: 'AWS::Serverless::Function'
     Properties:
