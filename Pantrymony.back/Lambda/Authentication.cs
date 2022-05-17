@@ -6,6 +6,7 @@ using Amazon.Lambda.Serialization.SystemTextJson;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using Pantrymony.back.Extensions;
 
 namespace Pantrymony.back.Lambda;
 
@@ -17,23 +18,19 @@ public class Authentication
         ILambdaContext context)
     {
         APIGatewayCustomAuthorizerResponse result;
-        var authenticationToken =request.AuthorizationToken.Split(' ')[1];
-        context.Logger.LogInformation($"Authenticating user with token :[{ authenticationToken}]");
-        switch (authenticationToken)
+        var accessToken = request.AuthorizationToken.Split(' ')[1];
+        context.Logger.LogInformation($"Authenticating user with token :[{accessToken}]");
+        if (await ValidateAccessToken(accessToken, context.Logger))
         {
-            case "Allow":
-                context.Logger.LogInformation($"Authorised!");
-                result = GenerateResponse("user", "Allow", request.MethodArn);
-                break;
-            case "Deny":
-                context.Logger.LogInformation($"Denied!");
-                result = GenerateResponse("user", "Deny", request.MethodArn);
-                break;                
-            case "Unauthorized":
-                throw new UnauthorizedAccessException();
-            default:
-                throw new SecurityTokenValidationException();
+            context.Logger.LogInformation($"Authorized!");
+            result = GenerateResponse("user", "Allow", request.MethodArn);
         }
+        else
+        {
+            context.Logger.LogInformation($"Denied!");
+            result = GenerateResponse("user", "Deny", request.MethodArn);
+        }
+        
         context.Logger.LogInformation($"Generated response: [{JsonSerializer.Serialize(result)}]");
         return result;
     }
@@ -57,18 +54,25 @@ public class Authentication
         return authResponse;
     }
     
-    private async Task<bool> ValidateAccessToken(string token)
+    private static async Task<bool> ValidateAccessToken(string token, ILambdaLogger logger)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         try
         {
+            var oauthDomain = Environment.GetEnvironmentVariable("AUTH_DOMAIN")
+                .ThrowIfNull(new Exception($"Undefined environment variable: [AUTH_DOMAIN]!"));
             IConfigurationManager<OpenIdConnectConfiguration> configurationManager = 
                 new ConfigurationManager<OpenIdConnectConfiguration>(
-                    $"https://gantonopoulos.eu.auth0.com/.well-known/openid-configuration", 
+                    $"https://{oauthDomain}/.well-known/openid-configuration", 
                     new OpenIdConnectConfigurationRetriever());
-            OpenIdConnectConfiguration openIdConfig = await configurationManager.GetConfigurationAsync(CancellationToken.None);
+            
+            logger.LogInformation($"Getting signing keys!");
+            OpenIdConnectConfiguration openIdConfig = 
+                await configurationManager.GetConfigurationAsync(CancellationToken.None);
             var keys = openIdConfig.SigningKeys;
-            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            logger.LogInformation($"Found {keys.Count} keys!");
+            
+            var claims = tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 ValidateAudience = false,
                 ValidateIssuer = false,
@@ -78,10 +82,11 @@ public class Authentication
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKeys = openIdConfig.SigningKeys,
             }, out SecurityToken validatedToken);
+            
         }
         catch(Exception ex)
         {
-            Console.WriteLine($"{ex.Message}: {ex.StackTrace}");
+            logger.LogError($"{ex.Message}: {ex.StackTrace}");
             return false;
         }
         return true;

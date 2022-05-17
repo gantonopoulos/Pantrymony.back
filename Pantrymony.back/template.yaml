@@ -15,9 +15,12 @@ Parameters:
 
 Globals:
   Function:
+    Timeout: 120
+    MemorySize: 512
     Environment:
       Variables:
         VICTUALS_TABLE: !Sub "Victuals-${stage}"
+        AUTH_DOMAIN: "gantonopoulos.eu.auth0.com"
   Api:
     Cors:
       AllowMethods: "'OPTIONS,DELETE,GET,HEAD,PATCH,POST,PUT'"
@@ -30,11 +33,11 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Prod
-#      Auth:
-#        DefaultAuthorizer: LambdaTokenAuthorizer
-#        Authorizers:
-#          LambdaTokenAuthorizer:
-#            FunctionArn: !GetAtt AuthenticateUser.Arn
+      Auth:
+        DefaultAuthorizer: LambdaTokenAuthorizer
+        Authorizers:
+          LambdaTokenAuthorizer:
+            FunctionArn: !GetAtt AuthenticateUser.Arn
   
   AuthenticateUser:
     Type: 'AWS::Serverless::Function'
@@ -42,6 +45,7 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.Authentication::AuthenticateAsync
       Runtime: dotnet6
       Description: Lambda handler for authentication
+      
   
   VictualsTable:
     Type: AWS::DynamoDB::Table
@@ -76,8 +80,6 @@ Resources:
       Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::DeleteVictual
       Runtime: dotnet6
       Description: Lambda to delete a victual
-      MemorySize: 512
-      Timeout: 60
       Events:
         GetVictualsApi:
           Type: Api
@@ -105,8 +107,6 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetVictuals
       Runtime: dotnet6
       Description: A Lambda to return the victuals registered under a certain user with a certain victualId
-      MemorySize: 512
-      Timeout: 60
       Events:
         GetVictualsApi:
           Type: Api
@@ -130,8 +130,6 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUserVictuals
       Runtime: dotnet6
       Description: A Lambda to return the victuals registered under a certain user with a certain victualId
-      MemorySize: 512
-      Timeout: 60
       Events:
         GetVictualsApi:
           Type: Api
@@ -157,8 +155,6 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUserVictual
       Runtime: dotnet6
       Description: A Lambda to return the victuals registered under a certain user with a certain victualId
-      MemorySize: 512
-      Timeout: 60
       Events:
         GetVictualsApi:
           Type: Api
@@ -187,8 +183,6 @@ Resources:
       Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PostVictual
       Runtime: dotnet6
       Description: Lambda handler inserting a new Victual in the db
-      MemorySize: 512
-      Timeout: 60
       Events:
         GetVictualsApi:
           Type: Api
@@ -211,8 +205,6 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PutVictual
       Runtime: dotnet6
       Description: Lambda handler inserting a new Victual in the db
-      MemorySize: 512
-      Timeout: 120
       Events:
         GetVictualsApi:
           Type: Api
@@ -241,8 +233,6 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUnits
       Runtime: dotnet6
       Description: A Lambda to return the supported units
-      MemorySize: 512
-      Timeout: 60
       Events:
         GetVictualsApi:
           Type: Api
