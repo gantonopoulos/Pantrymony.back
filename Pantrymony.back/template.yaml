@@ -29,22 +29,22 @@ Globals:
       AllowCredentials: false      
     
 Resources:
-#  PantrymonyApi:
-#    Type: AWS::Serverless::Api
-#    Properties:
-#      StageName: Prod
-#      Auth:
-#        DefaultAuthorizer: LambdaTokenAuthorizer
-#        Authorizers:
-#          LambdaTokenAuthorizer:
-#            FunctionArn: !GetAtt AuthenticateUser.Arn
+  PantrymonyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: LambdaTokenAuthorizer
+        Authorizers:
+          LambdaTokenAuthorizer:
+            FunctionArn: !GetAtt AuthenticateUser.Arn
   
-#  AuthenticateUser:
-#    Type: 'AWS::Serverless::Function'
-#    Properties:
-#      Handler: Pantrymony.back::Pantrymony.back.Lambda.Authentication::AuthenticateAsync
-#      Runtime: dotnet6
-#      Description: Lambda handler for authentication
+  AuthenticateUser:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Authentication::AuthenticateAsync
+      Runtime: dotnet6
+      Description: Lambda handler for authentication
       
   GetUnits:
     Type: 'AWS::Serverless::Function'
@@ -56,7 +56,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /units
             Method: get
 
@@ -166,7 +166,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /uservictuals
             Method: get
             RequestParameters:

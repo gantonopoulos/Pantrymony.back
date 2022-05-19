@@ -63,3 +63,5 @@ If we need to pass any information, e.g. access right, roles etc, from the front
 [Scopes](https://auth0.com/docs/get-started/apis/scopes/openid-connect-scopes)
 
 [JSON Web Token Claims](https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims)
+
+[How to get the id_token in blazor web assembly](https://stackoverflow.com/questions/63105618/how-to-get-the-id-token-in-blazor-web-assembly)

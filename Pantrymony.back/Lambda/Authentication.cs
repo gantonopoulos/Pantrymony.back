@@ -20,9 +20,9 @@ public class Authentication
         APIGatewayCustomAuthorizerResponse response;
         var accessToken = request.AuthorizationToken.Split(' ')[1];
         context.Logger.LogInformation($"Authenticating user with token :[{accessToken}]");
-        request.Headers.ToList().ForEach(headerEntry =>
-            context.Logger.LogInformation($"Header[{headerEntry.Key}:{headerEntry.Value}]"));
-        
+        context.Logger.LogInformation($"Request HEADERS:{request.Headers}");
+        request.Headers?.ToList().ForEach(headerEntry =>
+            context.Logger.LogInformation($"Header [{headerEntry.Key}:{headerEntry.Value}]"));
         
         if (await ValidateAccessToken(accessToken, context.Logger))
         {

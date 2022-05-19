@@ -37,7 +37,7 @@ app.UseCors(policyBuilder =>
         .AllowAnyOrigin()
         //.WithOrigins("https://localhost:7260", "http://localhost:5123")
         .AllowAnyMethod()
-        .WithHeaders(HeaderNames.ContentType);
+        .WithHeaders(HeaderNames.ContentType, HeaderNames.Authorization);
 });
 //app.UseAuthentication();
 app.UseAuthorization();
