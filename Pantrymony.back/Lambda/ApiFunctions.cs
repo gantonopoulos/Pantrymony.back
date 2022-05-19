@@ -29,7 +29,7 @@ public class ApiFunctions
     }
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    private static async Task<IEnumerable<Victual>> GetUserVictual(
+    private static async Task<APIGatewayProxyResponse> GetUserVictual(
         APIGatewayProxyRequest request,
         ILambdaContext context)
     {
@@ -43,7 +43,7 @@ public class ApiFunctions
                 userId, QueryOperator.Equal, new[] { victualId })
             .GetRemainingAsync();
         context.Logger.LogInformation($"Found {result.Count()} victuals");
-        return result;
+        return result.AsOkGetResponse().Log(context.Logger);
     }
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
