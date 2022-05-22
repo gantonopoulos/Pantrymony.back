@@ -21,12 +21,7 @@ Globals:
       Variables:
         VICTUALS_TABLE: !Sub "Victuals-${stage}"
         AUTH_DOMAIN: "gantonopoulos.eu.auth0.com"
-  Api:
-    Cors:
-      AllowMethods: "'OPTIONS,DELETE,GET,HEAD,PATCH,POST,PUT'"
-      AllowHeaders: "'Content-Type, Authorization, X-Amz-Date, X-Api-Key, X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
-      AllowCredentials: false      
+        JWKS_URL: "https://gantonopoulos.eu.auth0.com/.well-known/jwks.json"          
     
 Resources:
   PantrymonyApi:
@@ -38,6 +33,8 @@ Resources:
         Authorizers:
           LambdaTokenAuthorizer:
             FunctionArn: !GetAtt AuthenticateUser.Arn
+            Identity:
+              ReauthorizeEvery: 0 # Setting TTL to 0 to disable caching the authorizer's requests. lambda Service Default: 300
   
   AuthenticateUser:
     Type: 'AWS::Serverless::Function'
@@ -60,23 +57,23 @@ Resources:
             Path: /units
             Method: get
 
-#  Options:
-#    Type: 'AWS::Serverless::Function'
-#    Properties:
-#      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::Options
-#      Runtime: dotnet6
-#      Description: A Lambda to return the supported units
-#      MemorySize: 512
-#      Timeout: 60
-#      Events:
-#        GetVictualsApi:
-#          Type: Api
-#          Properties:
-##            Auth:
-##              Authorizer: NONE
-##            RestApiId: !Ref PantrymonyApi
-#            Path: /{proxy+}
-#            Method: options
+  Options:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::Options
+      Runtime: dotnet6
+      Description: A Lambda to return the supported units
+      MemorySize: 512
+      Timeout: 60
+      Events:
+        GetVictualsApi:
+          Type: Api
+          Properties:
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref PantrymonyApi
+            Path: /{proxy+}
+            Method: options
       
   
   VictualsTable:
@@ -116,7 +113,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /deletevictual
             Method: delete
             RequestParameters:
@@ -143,7 +140,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /victuals
             Method: get
       Policies:
@@ -191,7 +188,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /uservictual
             Method: get
             RequestParameters:
@@ -219,7 +216,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /createvictual
             Method: post
       Policies:
@@ -241,7 +238,7 @@ Resources:
         GetVictualsApi:
           Type: Api
           Properties:
-#            RestApiId: !Ref PantrymonyApi
+            RestApiId: !Ref PantrymonyApi
             Path: /updatevictual
             Method: put
             RequestParameters:
