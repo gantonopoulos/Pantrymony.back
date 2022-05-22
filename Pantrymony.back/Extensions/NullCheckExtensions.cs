@@ -11,4 +11,11 @@ internal static class NullCheckExtensions
 
         return target;
     }
+
+    internal static T ThrowIf<T>(this T target, Predicate<T> isTrue, Exception ex)
+    {
+        if (isTrue(target))
+            throw ex;
+        return target;
+    }
 }

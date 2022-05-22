@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Amazon.Lambda.APIGatewayEvents;
-using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Pantrymony.back.Extensions;
 
@@ -12,6 +12,7 @@ namespace Pantrymony.back.Lambda;
 
 public class Authentication
 {
+    
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     public static async Task<APIGatewayCustomAuthorizerResponse> AuthenticateAsync(
         APIGatewayCustomAuthorizerRequest request, 
@@ -20,80 +21,131 @@ public class Authentication
         APIGatewayCustomAuthorizerResponse response;
         var accessToken = request.AuthorizationToken.Split(' ')[1];
         context.Logger.LogInformation($"Authenticating user with token :[{accessToken}]");
-        context.Logger.LogInformation($"Request HEADERS:{request.Headers}");
-        request.Headers?.ToList().ForEach(headerEntry =>
-            context.Logger.LogInformation($"Header [{headerEntry.Key}:{headerEntry.Value}]"));
         
-        if (await ValidateAccessToken(accessToken, context.Logger))
+        if (await ValidateTokenSignature(accessToken, context.Logger))
         {
             context.Logger.LogInformation($"Authorized!");
-            response = GenerateResponse("user", "Allow", request.MethodArn);
+            response = GenerateResponse(GetTokenClaimValue(accessToken, "email"),
+                "Allow", 
+                request.MethodArn);
         }
         else
         {
             context.Logger.LogInformation($"Denied!");
-            response = GenerateResponse("user", "Deny", request.MethodArn);
+            response = GenerateResponse(GetTokenClaimValue(accessToken, "email"),
+                "Deny", 
+                request.MethodArn);
         }
         
         context.Logger.LogInformation($"Generated response: [{JsonSerializer.Serialize(response)}]");
         return response;
     }
+   
+    private static async Task<bool> ValidateTokenSignature(string token, ILambdaLogger logger)
+    {
+        try
+        {
+            JsonWebTokenHandler handler = new JsonWebTokenHandler();
+            var validationResult = handler.ValidateToken(token, new TokenValidationParameters()
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = await GetSigningKeyOfToken(token)
+            });
+            validationResult.Exception.ThrowIf((e) => e is not null, validationResult.Exception);
+            return validationResult.IsValid;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError($"Token validation failed:\n{ex.Message}: {ex.StackTrace}");
+            return false;
+        }
+        
+    }
 
-    private static APIGatewayCustomAuthorizerResponse GenerateResponse(string principalId, string effect,
+    private static async Task<SecurityKey> GetSigningKeyOfToken(string token)
+    {
+        JsonWebTokenHandler handler = new JsonWebTokenHandler();
+        var publicKeys = await FetchJsonWebKeySet();
+        var jsonWebToken = handler.ReadJsonWebToken(token);
+        var publicKeyOfToken = publicKeys.Keys.ToList()
+            .Where(IsVerificationKey).Single(key => key.Kid == jsonWebToken.Kid);
+        
+        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+        RSAParameters rsaParameters = new RSAParameters()
+        {
+            Modulus = WebEncoders.Base64UrlDecode(publicKeyOfToken.N),
+            Exponent = WebEncoders.Base64UrlDecode(publicKeyOfToken.E)
+        };
+                
+        rsa.ImportParameters(rsaParameters);
+        return new RsaSecurityKey(rsa);
+    }
+
+    private static async Task<JsonWebKeySet> FetchJsonWebKeySet()
+    {
+        var jwksUrl = Environment.GetEnvironmentVariable("JWKS_URL")
+            .ThrowIfNull(new Exception($"Undefined environment variable: [JWKS_URL]!"));
+        var requestMsg = new HttpRequestMessage(HttpMethod.Get, jwksUrl);
+        var response = await new HttpClient().SendAsync(requestMsg);
+        response.ThrowIf(r => !r.IsSuccessStatusCode, 
+            new Exception("Could not fetch JWKS from OpenId provider"));
+        var publicKeys = JsonWebKeySet.Create(await response.Content.ReadAsStringAsync());
+        
+        return publicKeys;
+    }
+
+    private static bool IsVerificationKey(JsonWebKey jsonWebKey)
+    {
+        return jsonWebKey.Use == "sig" &&
+               jsonWebKey.Alg == "RS256" &&
+               jsonWebKey.Kty == "RSA" &&
+               !string.IsNullOrEmpty(jsonWebKey.Kid) &&
+               jsonWebKey.X5c is not null &&
+               jsonWebKey.X5c.Any() &&
+               !string.IsNullOrEmpty(jsonWebKey.N) &&
+               !string.IsNullOrEmpty(jsonWebKey.E);
+
+    }
+    
+    private static APIGatewayCustomAuthorizerResponse GenerateResponse(
+        string principalId, 
+        string effect,
         string resource)
     {
-        var authResponse = new APIGatewayCustomAuthorizerResponse();
-        
-        authResponse.PrincipalID = principalId;
-        var policyDocument = new APIGatewayCustomAuthorizerPolicy();
-        policyDocument.Version = "2012-10-17";
-        policyDocument.Statement = new List<APIGatewayCustomAuthorizerPolicy.IAMPolicyStatement>();
-        var statementOne = new APIGatewayCustomAuthorizerPolicy.IAMPolicyStatement();
-        statementOne.Action = new HashSet<string>(){"execute-api:Invoke"};
-        statementOne.Effect = effect;
-        // I should return all accessible lambdas (use "*") or activate caching
-        statementOne.Resource = new HashSet<string>() { resource };
+        var authResponse = new APIGatewayCustomAuthorizerResponse
+        {
+            PrincipalID = principalId
+        };
+
+        var policyDocument = new APIGatewayCustomAuthorizerPolicy
+        {
+            Version = "2012-10-17",
+            Statement = new List<APIGatewayCustomAuthorizerPolicy.IAMPolicyStatement>()
+        };
+        var statementOne = new APIGatewayCustomAuthorizerPolicy.IAMPolicyStatement
+        {
+            Action = new HashSet<string>(){"execute-api:Invoke"},
+            Effect = effect,
+            // I should return all accessible lambdas (use "*") or activate caching
+            Resource = new HashSet<string>() { "*" }
+        };
         policyDocument.Statement.Add(statementOne);
         authResponse.PolicyDocument = policyDocument;
         return authResponse;
     }
     
-    private static async Task<bool> ValidateAccessToken(string token, ILambdaLogger logger)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="claimName">e.g. "email"</param>
+    /// <returns></returns>
+    public static string GetTokenClaimValue(string token, string claimName)
     {
-        var tokenHandler = new JwtSecurityTokenHandler();
-        try
-        {
-            var oauthDomain = Environment.GetEnvironmentVariable("AUTH_DOMAIN")
-                .ThrowIfNull(new Exception($"Undefined environment variable: [AUTH_DOMAIN]!"));
-            var configurationUrl = $"https://{oauthDomain}/.well-known/openid-configuration";
-            
-            logger.LogInformation($"Fetching signing keys from {configurationUrl}");
-            IConfigurationManager<OpenIdConnectConfiguration> configurationManager = 
-                new ConfigurationManager<OpenIdConnectConfiguration>(configurationUrl, 
-                    new OpenIdConnectConfigurationRetriever());
-            
-            OpenIdConnectConfiguration openIdConfig = 
-                await configurationManager.GetConfigurationAsync(CancellationToken.None);
-            var keys = openIdConfig.SigningKeys;
-            logger.LogInformation($"Found {keys.Count} keys!");
-            
-            var claims = tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateAudience = false,
-                ValidateIssuer = false,
-                ValidateActor = false,
-                ValidateLifetime = false,
-                ValidateTokenReplay = false,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKeys = openIdConfig.SigningKeys,
-            }, out SecurityToken validatedToken);
-            
-        }
-        catch(Exception ex)
-        {
-            logger.LogError($"Access_Token validation failed:\n{ex.Message}: {ex.StackTrace}");
-            return false;
-        }
-        return true;
+        var handler = new JsonWebTokenHandler();
+        var jsonWebToken = handler.ReadJsonWebToken(token);
+        return jsonWebToken.GetPayloadValue<string>(claimName);
     }
 }
