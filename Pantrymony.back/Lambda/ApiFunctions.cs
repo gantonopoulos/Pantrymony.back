@@ -7,6 +7,9 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using Pantrymony.back.Extensions;
 using Pantrymony.back.Model;
 
@@ -33,17 +36,34 @@ public class ApiFunctions
         APIGatewayProxyRequest request,
         ILambdaContext context)
     {
+        try
+        {
+            var userId = request.QueryStringParameters["userId"];
+            var victualId = request.QueryStringParameters["victualId"];
+            userId.ThrowIfNull(new ArgumentNullException(nameof(userId)));
+            victualId.ThrowIfNull(new ArgumentNullException(nameof(victualId)));
+            
+            var result = await GetUserVictual(userId, victualId , context.Logger);
+            context.Logger.LogInformation($"Found {result.Count()} victuals");
+            return result.AsOkGetResponse().Log(context.Logger);
+        }
+        catch (Exception e)
+        {
+            context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
+            return e.Message.AsResponse(HttpStatusCode.BadRequest);
+        }
+        
+    }
+
+    private static async Task<List<Victual>> GetUserVictual(string userId, string victualId, ILambdaLogger logger)
+    {
         await ValidateTableExistsAsync();
         var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
-        var userId = request.QueryStringParameters["userId"];
-        var victualId = request.QueryStringParameters["victualId"];
-
-        context.Logger.LogInformation($"Requesting victual [{victualId}] for user [{userId}]");
+        logger.LogInformation($"Requesting victual [{victualId}] for user [{userId}]");
         var result = await dbContext.QueryAsync<Victual>(
                 userId, QueryOperator.Equal, new[] { victualId })
             .GetRemainingAsync();
-        context.Logger.LogInformation($"Found {result.Count()} victuals");
-        return result.AsOkGetResponse().Log(context.Logger);
+        return result;
     }
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
@@ -188,4 +208,43 @@ public class ApiFunctions
         return await Task.Run(()=> HttpStatusCode.OK.AsApiGatewayProxyResponse().Log(context.Logger));
     }
 
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    public static async Task<APIGatewayProxyResponse> PostVictualImage(APIGatewayProxyRequest request, ILambdaContext context)
+    {
+        try
+        {
+            string victualId = request.QueryStringParameters["victualId"];
+            const string bucketNameTag = "IMAGES_S3_BUCKET";
+            var bucketName = Environment.GetEnvironmentVariable(bucketNameTag);
+
+            using (var ms = new MemoryStream())
+            {
+                await using (var sw = new StreamWriter(ms))
+                {
+                    await sw.WriteAsync(request.Body);
+                    await sw.FlushAsync();
+                }
+
+                ms.Position = 0;
+
+                TransferUtilityUploadRequest req = new TransferUtilityUploadRequest()
+                {
+                    BucketName = bucketName,
+                    Key = victualId + ".png",
+                    ContentType = "image/png",
+                    InputStream = ms
+                };
+
+                var client = new TransferUtility();
+                await client.UploadAsync(req);
+            }
+        }
+        catch (Exception e)
+        {
+            context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
+            return e.Message.AsResponse(HttpStatusCode.BadRequest).Log(context.Logger);
+        }
+        
+        return await Task.Run(()=> HttpStatusCode.Created.AsApiGatewayProxyResponse().Log(context.Logger));
+    }
 }

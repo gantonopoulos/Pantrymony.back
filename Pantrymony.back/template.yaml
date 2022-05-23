@@ -12,6 +12,9 @@ Parameters:
   account:
     Type: String
     Default: '926574008245'
+  imageBucket:
+    Type: String
+    Default: "pantrymony-image-store"
 
 Globals:
   Function:
@@ -21,7 +24,8 @@ Globals:
       Variables:
         VICTUALS_TABLE: !Sub "Victuals-${stage}"
         AUTH_DOMAIN: "gantonopoulos.eu.auth0.com"
-        JWKS_URL: "https://gantonopoulos.eu.auth0.com/.well-known/jwks.json"          
+        JWKS_URL: "https://gantonopoulos.eu.auth0.com/.well-known/jwks.json"
+        IMAGES_S3_BUCKET: !Sub "${imageBucket}-${stage}"
     
 Resources:
   PantrymonyApi:
@@ -256,7 +260,69 @@ Resources:
                 - dynamodb:UpdateItem
               Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
 
+  PostVictualImage:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PostVictualImage
+      Runtime: dotnet6
+      Description: Lambda handler storing the passed image data to S3
+      Events:
+        GetVictualsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PantrymonyApi
+            Path: /uploadImage
+            Method: post
+            RequestParameters:
+              - method.request.querystring.victualId:
+                  Required: true
+      Policies:
+        - Statement:
+            - Sid:  PostVictualImagePolicy
+              Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+              Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
 
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${imageBucket}-${stage}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'
+            AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            MaxAge: 3000
+    
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadForGetBucketObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
+      Bucket: !Ref ImagesBucket    
+
+
+Outputs:
+  BucketName:
+    Value: !Ref ImagesBucket
+    Description: Name of the sample Amazon S3 bucket with CORS enabled.
+    
 #Outputs:
 #  PantrymonyApi:
 #    Description: URL of your API endpoint
