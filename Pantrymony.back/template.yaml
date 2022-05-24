@@ -39,6 +39,9 @@ Resources:
             FunctionArn: !GetAtt AuthenticateUser.Arn
             Identity:
               ReauthorizeEvery: 0 # Setting TTL to 0 to disable caching the authorizer's requests. lambda Service Default: 300
+      BinaryMediaTypes:
+        - image~1png
+        - image~1jpeg
   
   AuthenticateUser:
     Type: 'AWS::Serverless::Function'
@@ -282,13 +285,18 @@ Resources:
               Effect: Allow
               Action:
                 - s3:PutObject
-                - s3:GetObject
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
 
   ImagesBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${imageBucket}-${stage}"
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
@@ -216,35 +217,26 @@ public class ApiFunctions
             string victualId = request.QueryStringParameters["victualId"];
             const string bucketNameTag = "IMAGES_S3_BUCKET";
             var bucketName = Environment.GetEnvironmentVariable(bucketNameTag);
-
-            using (var ms = new MemoryStream())
+            var contentType = request.Headers["Content-Type"];
+            var bodyBytes = Convert.FromBase64String(request.Body);
+            
+            await using Stream bodyStream = new MemoryStream(bodyBytes);
+            var req = new TransferUtilityUploadRequest()
             {
-                await using (var sw = new StreamWriter(ms))
-                {
-                    await sw.WriteAsync(request.Body);
-                    await sw.FlushAsync();
-                }
-
-                ms.Position = 0;
-
-                TransferUtilityUploadRequest req = new TransferUtilityUploadRequest()
-                {
-                    BucketName = bucketName,
-                    Key = victualId + ".png",
-                    ContentType = "image/png",
-                    InputStream = ms
-                };
-
-                var client = new TransferUtility();
-                await client.UploadAsync(req);
-            }
+                BucketName = bucketName,
+                Key = $"{victualId}.{contentType.Split('/')[1]}",
+                ContentType = contentType,
+                InputStream = bodyStream
+            };
+            var client = new TransferUtility();
+            await client.UploadAsync(req);
         }
         catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
             return e.Message.AsResponse(HttpStatusCode.BadRequest).Log(context.Logger);
         }
-        
+
         return await Task.Run(()=> HttpStatusCode.Created.AsApiGatewayProxyResponse().Log(context.Logger));
     }
 }
