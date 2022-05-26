@@ -26,6 +26,7 @@ Globals:
         AUTH_DOMAIN: "gantonopoulos.eu.auth0.com"
         JWKS_URL: "https://gantonopoulos.eu.auth0.com/.well-known/jwks.json"
         IMAGES_S3_BUCKET: !Sub "${imageBucket}-${stage}"
+        SIGNED_URL_EXPIRATION_MINUTES: 30
     
 Resources:
   PantrymonyApi:
@@ -263,40 +264,90 @@ Resources:
                 - dynamodb:UpdateItem
               Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
 
-  PostVictualImage:
+              
+  GetSignedUploadUrl:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PostVictualImage
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedUploadUrl
       Runtime: dotnet6
-      Description: Lambda handler storing the passed image data to S3
+      Description: Lambda handler returning a Signed-Url to upload files to the S3 bucket
       Events:
         GetVictualsApi:
           Type: Api
           Properties:
             RestApiId: !Ref PantrymonyApi
-            Path: /uploadImage
-            Method: post
+            Path: /uploadImageUrl
+            Method: get
             RequestParameters:
-              - method.request.querystring.victualId:
+              - method.request.querystring.imageKey:
                   Required: true
       Policies:
         - Statement:
-            - Sid:  PostVictualImagePolicy
+            - Sid:  UploadVictualImagePolicy
               Effect: Allow
               Action:
-                - s3:PutObject
+                - s3:GetObject
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
+
+  GetSignedDownloadUrl:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedDownloadUrl
+      Runtime: dotnet6
+      Description: Lambda handler returning a Signed-Url to download files from the S3 bucket
+      Events:
+        GetVictualsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PantrymonyApi
+            Path: /downloadImageUrl
+            Method: get
+            RequestParameters:
+              - method.request.querystring.imageKey:
+                  Required: true
+      Policies:
+        - Statement:
+            - Sid:  UploadVictualImagePolicy
+              Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
+
+  GetSignedDeleteUrl:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedDeleteUrl
+      Runtime: dotnet6
+      Description: Lambda handler returning a Signed-Url to delete files from the S3 bucket
+      Events:
+        GetVictualsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PantrymonyApi
+            Path: /deleteImageUrl
+            Method: get
+            RequestParameters:
+              - method.request.querystring.imageKey:
+                  Required: true
+      Policies:
+        - Statement:
+            - Sid:  UploadVictualImagePolicy
+              Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
+
 
   ImagesBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${imageBucket}-${stage}"
       AccessControl: Private
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+#      PublicAccessBlockConfiguration:
+#        BlockPublicAcls: true
+#        BlockPublicPolicy: true
+#        IgnorePublicAcls: true
+#        RestrictPublicBuckets: true
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
@@ -318,10 +369,13 @@ Resources:
         Id: MyPolicy
         Version: "2012-10-17"
         Statement:
-          - Sid: PublicReadForGetBucketObjects
+          - Sid: ThirdPartyBucketAccess
             Effect: Allow
             Principal: '*'
-            Action: 's3:GetObject'
+            Action: 
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
             Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
       Bucket: !Ref ImagesBucket    
 

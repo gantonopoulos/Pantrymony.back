@@ -1,0 +1,5 @@
+- Check nullability
+- Check all requests in frontend are disposed (using)
+- check exception handling.
+- CHeck duplication
+- Check logging (too much?)

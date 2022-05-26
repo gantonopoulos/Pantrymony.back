@@ -73,7 +73,7 @@ public class Victual
     [DynamoDBProperty("Name")]
     public string Name { get; set; }
     
-    [DynamoDBProperty("ImageUrl")]
+    [DynamoDBIgnore]
     public string ImageUrl { get; set; }
     
     [DynamoDBProperty("Quantity")]

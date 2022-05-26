@@ -55,7 +55,7 @@ public class ApiFunctions
         }
         
     }
-
+    
     private static async Task<List<Victual>> GetUserVictual(string userId, string victualId, ILambdaLogger logger)
     {
         await ValidateTableExistsAsync();
@@ -114,6 +114,8 @@ public class ApiFunctions
             await dbContext.DeleteAsync<Victual>(
                 request.QueryStringParameters["userId"],
                 request.QueryStringParameters["victualId"]);
+            
+            
             context.Logger.LogInformation("Delete successful");
         }
         catch (Exception e)
@@ -210,33 +212,64 @@ public class ApiFunctions
     }
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<APIGatewayProxyResponse> PostVictualImage(APIGatewayProxyRequest request, ILambdaContext context)
+    public static async Task<APIGatewayProxyResponse> GetSignedUploadUrl(APIGatewayProxyRequest request, ILambdaContext context)
     {
         try
         {
-            string victualId = request.QueryStringParameters["victualId"];
-            const string bucketNameTag = "IMAGES_S3_BUCKET";
-            var bucketName = Environment.GetEnvironmentVariable(bucketNameTag);
-            var contentType = request.Headers["Content-Type"];
-            var bodyBytes = Convert.FromBase64String(request.Body);
-            
-            await using Stream bodyStream = new MemoryStream(bodyBytes);
-            var req = new TransferUtilityUploadRequest()
-            {
-                BucketName = bucketName,
-                Key = $"{victualId}.{contentType.Split('/')[1]}",
-                ContentType = contentType,
-                InputStream = bodyStream
-            };
-            var client = new TransferUtility();
-            await client.UploadAsync(req);
+            return await RequestSignedUrl(HttpVerb.PUT, request, context);
         }
         catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
             return e.Message.AsResponse(HttpStatusCode.BadRequest).Log(context.Logger);
         }
+    }
+    
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    public static async Task<APIGatewayProxyResponse> GetSignedDeleteUrl(APIGatewayProxyRequest request, ILambdaContext context)
+    {
+        try
+        {
+            return await RequestSignedUrl(HttpVerb.DELETE, request, context);
+        }
+        catch (Exception e)
+        {
+            context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
+            return e.Message.AsResponse(HttpStatusCode.BadRequest).Log(context.Logger);
+        }
+    }
 
-        return await Task.Run(()=> HttpStatusCode.Created.AsApiGatewayProxyResponse().Log(context.Logger));
+    private static async Task<APIGatewayProxyResponse> RequestSignedUrl(HttpVerb httpVerb,
+        APIGatewayProxyRequest request,
+        ILambdaContext context)
+    {
+        var imageKey = request.QueryStringParameters["imageKey"];
+        const string bucketNameTag = "IMAGES_S3_BUCKET";
+        const string signedUrlExpirationTag = "SIGNED_URL_EXPIRATION_MINUTES";
+        double.TryParse(Environment.GetEnvironmentVariable(signedUrlExpirationTag), out double minutesToUrlExpiration);
+
+        var req = new GetPreSignedUrlRequest()
+        {
+            BucketName = Environment.GetEnvironmentVariable(bucketNameTag),
+            Key = $"{imageKey}",
+            Expires = DateTime.Now.AddMinutes(minutesToUrlExpiration),
+            Verb = httpVerb
+        };
+        var client = new TransferUtility();
+        return await Task.Run(()=> client.S3Client.GetPreSignedURL(req).AsOkGetResponse().Log(context.Logger));
+    }
+
+    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
+    public static async Task<APIGatewayProxyResponse> GetSignedDownloadUrl(APIGatewayProxyRequest request, ILambdaContext context)
+    {
+        try
+        {
+            return await RequestSignedUrl(HttpVerb.GET, request, context);
+        }
+        catch (Exception e)
+        {
+            context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
+            return e.Message.AsResponse(HttpStatusCode.BadRequest).Log(context.Logger);
+        }
     }
 }
