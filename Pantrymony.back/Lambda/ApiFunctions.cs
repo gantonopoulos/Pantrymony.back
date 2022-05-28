@@ -18,6 +18,9 @@ namespace Pantrymony.back.Lambda;
 
 public class ApiFunctions
 {
+    private const string BucketNameTag = "IMAGES_S3_BUCKET";
+    private const string SignedUrlExpirationTag = "SIGNED_URL_EXPIRATION_MINUTES";
+
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     public static async Task<APIGatewayProxyResponse> GetVictuals(
         APIGatewayProxyRequest request, 
@@ -44,7 +47,7 @@ public class ApiFunctions
             userId.ThrowIfNull(new ArgumentNullException(nameof(userId)));
             victualId.ThrowIfNull(new ArgumentNullException(nameof(victualId)));
             
-            var result = await GetUserVictual(userId, victualId , context.Logger);
+            var result = await GetUserVictualFromDb(userId, victualId , context.Logger);
             context.Logger.LogInformation($"Found {result.Count()} victuals");
             return result.AsOkGetResponse().Log(context.Logger);
         }
@@ -56,7 +59,7 @@ public class ApiFunctions
         
     }
     
-    private static async Task<List<Victual>> GetUserVictual(string userId, string victualId, ILambdaLogger logger)
+    private static async Task<List<Victual>> GetUserVictualFromDb(string userId, string victualId, ILambdaLogger logger)
     {
         await ValidateTableExistsAsync();
         var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
@@ -216,7 +219,8 @@ public class ApiFunctions
     {
         try
         {
-            return await RequestSignedUrl(HttpVerb.PUT, request, context);
+            return (await RequestSignedUrl(HttpVerb.PUT, request.QueryStringParameters["imageKey"]))
+                .AsOkGetResponse().Log(context.Logger);
         }
         catch (Exception e)
         {
@@ -230,7 +234,14 @@ public class ApiFunctions
     {
         try
         {
-            return await RequestSignedUrl(HttpVerb.DELETE, request, context);
+            var imageKey = request.QueryStringParameters["imageKey"];
+            if (await ExistsS3ResourceWithKeyAsync(imageKey, context.Logger))
+            {
+                return (await RequestSignedUrl(HttpVerb.DELETE, imageKey)).AsOkGetResponse()
+                    .Log(context.Logger);
+            }
+
+            return await Task.Run(()=> HttpStatusCode.NotFound.AsApiGatewayProxyResponse().Log(context.Logger));
         }
         catch (Exception e)
         {
@@ -239,24 +250,31 @@ public class ApiFunctions
         }
     }
 
-    private static async Task<APIGatewayProxyResponse> RequestSignedUrl(HttpVerb httpVerb,
-        APIGatewayProxyRequest request,
-        ILambdaContext context)
+    private static async Task<bool> ExistsS3ResourceWithKeyAsync(string imageKey, ILambdaLogger logger)
     {
-        var imageKey = request.QueryStringParameters["imageKey"];
-        const string bucketNameTag = "IMAGES_S3_BUCKET";
-        const string signedUrlExpirationTag = "SIGNED_URL_EXPIRATION_MINUTES";
-        double.TryParse(Environment.GetEnvironmentVariable(signedUrlExpirationTag), out double minutesToUrlExpiration);
+        var signedUrl = await RequestSignedUrl(HttpVerb.GET, imageKey);
+        using HttpClient httpClient = new HttpClient();
+        using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, signedUrl);
+        var downloadResponse = await httpClient.SendAsync(downloadRequest, HttpCompletionOption.ResponseContentRead);
+        return downloadResponse.IsSuccessStatusCode;
+    }
+
+    private static async Task<string> RequestSignedUrl(HttpVerb httpVerb, string imageKey)
+    {
+        double.TryParse(Environment.GetEnvironmentVariable(SignedUrlExpirationTag), out double minutesToUrlExpiration);
 
         var req = new GetPreSignedUrlRequest()
         {
-            BucketName = Environment.GetEnvironmentVariable(bucketNameTag),
+            BucketName = Environment.GetEnvironmentVariable(BucketNameTag),
             Key = $"{imageKey}",
             Expires = DateTime.Now.AddMinutes(minutesToUrlExpiration),
             Verb = httpVerb
         };
-        var client = new TransferUtility();
-        return await Task.Run(()=> client.S3Client.GetPreSignedURL(req).AsOkGetResponse().Log(context.Logger));
+        
+        using var client = new AmazonS3Client();
+        {
+            return await Task.Run(() => client.GetPreSignedURL(req));
+        }
     }
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
@@ -264,7 +282,15 @@ public class ApiFunctions
     {
         try
         {
-            return await RequestSignedUrl(HttpVerb.GET, request, context);
+            var imageKey = request.QueryStringParameters["imageKey"];
+            context.Logger.LogInformation($"Requesting Download-Url for key:[{imageKey}]");
+            if (await ExistsS3ResourceWithKeyAsync(imageKey, context.Logger))
+            {
+                return (await RequestSignedUrl(HttpVerb.GET, imageKey)).AsOkGetResponse()
+                    .Log(context.Logger);
+            }
+
+            return await Task.Run(()=> HttpStatusCode.NotFound.AsApiGatewayProxyResponse().Log(context.Logger));
         }
         catch (Exception e)
         {

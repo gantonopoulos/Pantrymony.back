@@ -38,8 +38,8 @@ Resources:
         Authorizers:
           LambdaTokenAuthorizer:
             FunctionArn: !GetAtt AuthenticateUser.Arn
-            Identity:
-              ReauthorizeEvery: 0 # Setting TTL to 0 to disable caching the authorizer's requests. lambda Service Default: 300
+#            Identity:
+#              ReauthorizeEvery: 0 # Setting TTL to 0 to disable caching the authorizer's requests. lambda Service Default: 300
       BinaryMediaTypes:
         - image~1png
         - image~1jpeg
@@ -153,7 +153,7 @@ Resources:
             Method: get
       Policies:
         - Statement:
-            - Sid: GetVictualPolicy
+            - Sid: GetVictualsPolicy
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
@@ -179,7 +179,7 @@ Resources:
                   Required: true
       Policies:
         - Statement:
-            - Sid: GetVictualPolicy
+            - Sid: GetUserVictualsPolicy
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
@@ -268,7 +268,7 @@ Resources:
   GetSignedUploadUrl:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedUploadUrl
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedUploadUrl      
       Runtime: dotnet6
       Description: Lambda handler returning a Signed-Url to upload files to the S3 bucket
       Events:
@@ -283,7 +283,7 @@ Resources:
                   Required: true
       Policies:
         - Statement:
-            - Sid:  UploadVictualImagePolicy
+            - Sid:  GetSignedUploadUrlPolicy
               Effect: Allow
               Action:
                 - s3:GetObject
@@ -307,10 +307,11 @@ Resources:
                   Required: true
       Policies:
         - Statement:
-            - Sid:  UploadVictualImagePolicy
+            - Sid:  GetSignedDownloadUrlPolicy
               Effect: Allow
-              Action:
+              Action: 
                 - s3:GetObject
+                - s3:ListBucket
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
 
   GetSignedDeleteUrl:
@@ -331,10 +332,11 @@ Resources:
                   Required: true
       Policies:
         - Statement:
-            - Sid:  UploadVictualImagePolicy
+            - Sid:  GetSignedDeleteUrlPolicy
               Effect: Allow
               Action:
                 - s3:GetObject
+                - s3:ListBucket
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
 
 
@@ -343,11 +345,14 @@ Resources:
     Properties:
       BucketName: !Sub "${imageBucket}-${stage}"
       AccessControl: Private
-#      PublicAccessBlockConfiguration:
-#        BlockPublicAcls: true
-#        BlockPublicPolicy: true
-#        IgnorePublicAcls: true
-#        RestrictPublicBuckets: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:

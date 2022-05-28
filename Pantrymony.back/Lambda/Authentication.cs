@@ -129,7 +129,7 @@ public class Authentication
             Action = new HashSet<string>(){"execute-api:Invoke"},
             Effect = effect,
             // I should return all accessible lambdas (use "*") or deactivate caching
-            Resource = new HashSet<string>() { resource }
+            Resource = new HashSet<string>() { "*" }
         };
         policyDocument.Statement.Add(statementOne);
         authResponse.PolicyDocument = policyDocument;
