@@ -22,20 +22,6 @@ public class ApiFunctions
     private const string SignedUrlExpirationTag = "SIGNED_URL_EXPIRATION_MINUTES";
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<APIGatewayProxyResponse> GetVictuals(
-        APIGatewayProxyRequest request, 
-        ILambdaContext context)
-    {
-        await ValidateTableExistsAsync();
-        var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
-
-        context.Logger.LogInformation($"Requesting all victuals.");
-        IEnumerable<Victual> result = await dbContext.ScanAsync<Victual>(Enumerable.Empty<ScanCondition>()).GetRemainingAsync();
-        context.Logger.LogInformation($"Found {result.Count()} victuals");
-        return result.AsOkGetResponse();
-    }
-
-    [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     private static async Task<APIGatewayProxyResponse> GetUserVictual(
         APIGatewayProxyRequest request,
         ILambdaContext context)

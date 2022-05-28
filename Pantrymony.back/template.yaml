@@ -137,30 +137,7 @@ Resources:
                 - dynamodb:DescribeTable
                 - dynamodb:DeleteItem
               Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
-    
-  GetVictuals:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetVictuals
-      Runtime: dotnet6
-      Description: A Lambda to return the victuals registered under a certain user with a certain victualId
-      Events:
-        GetVictualsApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref PantrymonyApi
-            Path: /victuals
-            Method: get
-      Policies:
-        - Statement:
-            - Sid: GetVictualsPolicy
-              Effect: Allow
-              Action:
-                - dynamodb:DescribeTable
-                - dynamodb:Scan
-                - dynamodb:Query
-              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
-              
+                  
   GetUserVictuals:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -210,7 +187,6 @@ Resources:
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
-                - dynamodb:Scan
                 - dynamodb:Query
               Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
                 
