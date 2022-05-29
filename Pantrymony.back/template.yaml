@@ -43,6 +43,20 @@ Resources:
       BinaryMediaTypes:
         - image~1png
         - image~1jpeg
+      Models:
+        PreSignedUrlRequest:
+          type: object
+          required:
+            - queryStringParameters
+          properties:
+            queryStringParameters:
+              type: object
+              required:
+                - imageKey
+              properties:
+                imageKey:
+                  type: string                  
+  
   
   AuthenticateUser:
     Type: 'AWS::Serverless::Function'
@@ -257,6 +271,11 @@ Resources:
             RequestParameters:
               - method.request.querystring.imageKey:
                   Required: true
+            RequestModel:
+              Model: PreSignedUrlRequest
+              Required: true
+              ValidateParameters: true
+
       Policies:
         - Statement:
             - Sid:  GetSignedUploadUrlPolicy
@@ -281,6 +300,10 @@ Resources:
             RequestParameters:
               - method.request.querystring.imageKey:
                   Required: true
+            RequestModel:
+              Model: PreSignedUrlRequest
+              Required: true              
+              ValidateParameters: true
       Policies:
         - Statement:
             - Sid:  GetSignedDownloadUrlPolicy
@@ -306,6 +329,10 @@ Resources:
             RequestParameters:
               - method.request.querystring.imageKey:
                   Required: true
+            RequestModel:
+              Model: PreSignedUrlRequest
+              Required: true
+              ValidateParameters: true
       Policies:
         - Statement:
             - Sid:  GetSignedDeleteUrlPolicy
