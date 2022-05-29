@@ -30,9 +30,6 @@ public class ApiFunctions
         {
             var userId = request.QueryStringParameters["userId"];
             var victualId = request.QueryStringParameters["victualId"];
-            userId.ThrowIfNull(new ArgumentNullException(nameof(userId)));
-            victualId.ThrowIfNull(new ArgumentNullException(nameof(victualId)));
-            
             var result = await GetUserVictualFromDb(userId, victualId , context.Logger);
             context.Logger.LogInformation($"Found {result.Count()} victuals");
             return result.AsOkGetResponse().Log(context.Logger);
@@ -156,7 +153,8 @@ public class ApiFunctions
             
             
             context.Logger.LogInformation(
-                $"Updating victual [{request.QueryStringParameters["victualId"]}] of user[{request.QueryStringParameters["userId"]}] to:\n" +
+                $"Updating victual [{request.QueryStringParameters["victualId"]}] of " +
+                $"user[{request.QueryStringParameters["userId"]}] to:\n" +
                 $"{request.Body}");
             var newVictual = JsonSerializer.Deserialize<Victual>(request.Body);
             var storedVictual = await dbContext.LoadAsync<Victual>(

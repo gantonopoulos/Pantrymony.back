@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Lambda to API-Gateway endpoints mapper for Pantrimony
+Description: Lambda to API-Gateway endpoints mapper for Pantrymony
 
 Parameters:
   stage:
@@ -38,26 +38,52 @@ Resources:
         Authorizers:
           LambdaTokenAuthorizer:
             FunctionArn: !GetAtt AuthenticateUser.Arn
-#            Identity:
-#              ReauthorizeEvery: 0 # Setting TTL to 0 to disable caching the authorizer's requests. lambda Service Default: 300
+      MethodSettings:
+        - LoggingLevel: INFO
+          ResourcePath: '/*'
+          HttpMethod: '*'
+      #            Identity:
+      #              ReauthorizeEvery: 0 # Setting TTL to 0 to disable caching the authorizer's requests. lambda Service Default: 300
       BinaryMediaTypes:
         - image~1png
         - image~1jpeg
       Models:
-        PreSignedUrlRequest:
+        Victual:
           type: object
           required:
-            - queryStringParameters
+            - UserId
+            - VictualId
+            - Calories
+            - Carbs
+            - Expires
+            - Fat
+            - Name
+            - Protein
+            - Quantity
+            - Unit
           properties:
-            queryStringParameters:
-              type: object
-              required:
-                - imageKey
-              properties:
-                imageKey:
-                  type: string                  
-  
-  
+            UserId:
+              type: string
+            VictualId:
+              type: string
+            Calories:
+              type: integer
+            Carbs:
+              type: integer
+            Expires:
+              type: string
+            Fat:
+              type: number
+            Name:
+              type: string
+            Protein:
+              type: integer
+            Quantity:
+              type: integer
+            Unit:
+              type: string        
+                  
+
   AuthenticateUser:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -65,6 +91,7 @@ Resources:
       Runtime: dotnet6
       Description: Lambda handler for authentication
       
+
   GetUnits:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -143,6 +170,10 @@ Resources:
                   Required: true
               - method.request.querystring.victualId:
                   Required: true
+            RequestModel:
+              Model: Victual
+              Required: true
+              ValidateParameters: true
       Policies:
         - Statement:
             - Sid:  DeleteVictualPolicy
@@ -168,6 +199,10 @@ Resources:
             RequestParameters:
               - method.request.querystring.userId:
                   Required: true
+            RequestModel:
+              Model: Victual
+              Required: true
+              ValidateParameters: true
       Policies:
         - Statement:
             - Sid: GetUserVictualsPolicy
@@ -195,6 +230,10 @@ Resources:
                   Required: true
               - method.request.querystring.victualId:
                   Required: true
+            RequestModel:
+              Model: Victual
+              Required: true
+              ValidateParameters: true
       Policies:
         - Statement:
             - Sid: GetVictualPolicy
@@ -217,6 +256,10 @@ Resources:
             RestApiId: !Ref PantrymonyApi
             Path: /createvictual
             Method: post
+            RequestModel:
+              Model: Victual
+              Required: true
+              ValidateBody: true
       Policies:
         - Statement:
             - Sid:  PostVictualPolicy
@@ -244,6 +287,11 @@ Resources:
                   Required: true
               - method.request.querystring.victualId:
                   Required: true
+            RequestModel:
+              Model: Victual
+              Required: true
+              ValidateBody: true
+              ValidateParameters: true
       Policies:
         - Statement:
             - Sid:  PutVictualPolicy
@@ -272,7 +320,7 @@ Resources:
               - method.request.querystring.imageKey:
                   Required: true
             RequestModel:
-              Model: PreSignedUrlRequest
+              Model: Victual
               Required: true
               ValidateParameters: true
 
@@ -283,7 +331,7 @@ Resources:
               Action:
                 - s3:GetObject
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
-
+              
   GetSignedDownloadUrl:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -301,7 +349,7 @@ Resources:
               - method.request.querystring.imageKey:
                   Required: true
             RequestModel:
-              Model: PreSignedUrlRequest
+              Model: Victual
               Required: true              
               ValidateParameters: true
       Policies:
@@ -312,7 +360,6 @@ Resources:
                 - s3:GetObject
                 - s3:ListBucket
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
-
   GetSignedDeleteUrl:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -330,7 +377,7 @@ Resources:
               - method.request.querystring.imageKey:
                   Required: true
             RequestModel:
-              Model: PreSignedUrlRequest
+              Model: Victual
               Required: true
               ValidateParameters: true
       Policies:
@@ -341,7 +388,6 @@ Resources:
                 - s3:GetObject
                 - s3:ListBucket
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
-
 
   ImagesBucket:
     Type: AWS::S3::Bucket
