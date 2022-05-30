@@ -30,7 +30,7 @@ public class ApiFunctions
             AWSSDKHandler.RegisterXRayForAllServices();
             var userId = request.QueryStringParameters["userId"];
             var victualId = request.QueryStringParameters["victualId"];
-            var result = await GetUserVictualFromDb(userId, victualId , context.Logger);
+            var result = await FetchUserVictual(userId, victualId , context.Logger);
             context.Logger.LogInformation($"Found {result.Count()} victuals");
             return result.AsOkGetResponse().Log(context.Logger);
         }
@@ -42,7 +42,7 @@ public class ApiFunctions
         
     }
     
-    private static async Task<List<Victual>> GetUserVictualFromDb(string userId, string victualId, ILambdaLogger logger)
+    private static async Task<List<Victual>> FetchUserVictual(string userId, string victualId, ILambdaLogger logger)
     {
         await ValidateTableExistsAsync();
         var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());

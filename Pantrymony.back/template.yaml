@@ -38,7 +38,7 @@ Resources:
         DefaultAuthorizer: LambdaTokenAuthorizer
         Authorizers:
           LambdaTokenAuthorizer:
-            FunctionArn: !GetAtt AuthenticateUser.Arn
+            FunctionArn: !GetAtt AuthorizeUser.Arn
       MethodSettings:
         - LoggingLevel: INFO
           ResourcePath: '/*'
@@ -86,10 +86,10 @@ Resources:
               type: string        
                   
 
-  AuthenticateUser:
+  AuthorizeUser:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.Authentication::AuthenticateAsync
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Auth.Authorizer::AuthorizeAsync
       Runtime: dotnet6
       Policies:
         - AWSXRayDaemonWriteAccess
