@@ -20,6 +20,7 @@ Globals:
   Function:
     Timeout: 120
     MemorySize: 512
+    Tracing: Active
     Environment:
       Variables:
         VICTUALS_TABLE: !Sub "Victuals-${stage}"
@@ -47,6 +48,7 @@ Resources:
       BinaryMediaTypes:
         - image~1png
         - image~1jpeg
+      TracingEnabled: true
       Models:
         Victual:
           type: object
@@ -89,6 +91,8 @@ Resources:
     Properties:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.Authentication::AuthenticateAsync
       Runtime: dotnet6
+      Policies:
+        - AWSXRayDaemonWriteAccess
       Description: Lambda handler for authentication
       
 
@@ -98,6 +102,8 @@ Resources:
       Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUnits
       Runtime: dotnet6
       Description: A Lambda to return the supported units
+      Policies:
+        - AWSXRayDaemonWriteAccess
       Events:
         GetVictualsApi:
           Type: Api
@@ -114,6 +120,8 @@ Resources:
       Description: A Lambda to return the supported units
       MemorySize: 512
       Timeout: 60
+      Policies:
+        - AWSXRayDaemonWriteAccess
       Events:
         GetVictualsApi:
           Type: Api
@@ -175,6 +183,7 @@ Resources:
               Required: true
               ValidateParameters: true
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid:  DeleteVictualPolicy
               Effect: Allow
@@ -203,7 +212,8 @@ Resources:
               Model: Victual
               Required: true
               ValidateParameters: true
-      Policies:
+      Policies:                
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid: GetUserVictualsPolicy
               Effect: Allow
@@ -235,6 +245,7 @@ Resources:
               Required: true
               ValidateParameters: true
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid: GetVictualPolicy
               Effect: Allow
@@ -261,6 +272,7 @@ Resources:
               Required: true
               ValidateBody: true
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid:  PostVictualPolicy
               Effect: Allow
@@ -293,6 +305,7 @@ Resources:
               ValidateBody: true
               ValidateParameters: true
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid:  PutVictualPolicy
               Effect: Allow
@@ -325,6 +338,7 @@ Resources:
               ValidateParameters: true
 
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid:  GetSignedUploadUrlPolicy
               Effect: Allow
@@ -353,6 +367,7 @@ Resources:
               Required: true              
               ValidateParameters: true
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid:  GetSignedDownloadUrlPolicy
               Effect: Allow
@@ -381,6 +396,7 @@ Resources:
               Required: true
               ValidateParameters: true
       Policies:
+        - AWSXRayDaemonWriteAccess
         - Statement:
             - Sid:  GetSignedDeleteUrlPolicy
               Effect: Allow

@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 using System.Text.Json;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
@@ -10,7 +9,7 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Amazon.S3.Transfer;
+using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Pantrymony.back.Extensions;
 using Pantrymony.back.Model;
 
@@ -28,6 +27,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             var userId = request.QueryStringParameters["userId"];
             var victualId = request.QueryStringParameters["victualId"];
             var result = await GetUserVictualFromDb(userId, victualId , context.Logger);
@@ -58,6 +58,7 @@ public class ApiFunctions
         APIGatewayProxyRequest request,
         ILambdaContext context)
     {
+        AWSSDKHandler.RegisterXRayForAllServices();
         await ValidateTableExistsAsync();
         var dbContext = new DynamoDBContext(new AmazonDynamoDBClient());
         var userId = request.QueryStringParameters["userId"];
@@ -92,6 +93,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             await ValidateTableExistsAsync();
             var client = new AmazonDynamoDBClient();
             var dbContext = new DynamoDBContext(client);
@@ -121,6 +123,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             await ValidateTableExistsAsync();
             var client = new AmazonDynamoDBClient();
             var dbContext = new DynamoDBContext(client);
@@ -147,6 +150,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             await ValidateTableExistsAsync();
             var client = new AmazonDynamoDBClient();
             var dbContext = new DynamoDBContext(client);
@@ -187,6 +191,7 @@ public class ApiFunctions
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     public static async Task<APIGatewayProxyResponse> GetUnits(APIGatewayProxyRequest request, ILambdaContext context)
     {
+        AWSSDKHandler.RegisterXRayForAllServices();
         context.Logger.LogInformation("Requesting supported units.");
         return await Task.Run(()=> Unit.SupportedUnits.AsOkGetResponse().Log(context.Logger));
     }
@@ -194,6 +199,7 @@ public class ApiFunctions
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     public static async Task<APIGatewayProxyResponse> Options(APIGatewayProxyRequest request, ILambdaContext context)
     {
+        AWSSDKHandler.RegisterXRayForAllServices();
         context.Logger.LogInformation("Options Request arrived!");
         return await Task.Run(()=> HttpStatusCode.OK.AsApiGatewayProxyResponse().Log(context.Logger));
     }
@@ -203,6 +209,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             return (await RequestSignedUrl(HttpVerb.PUT, request.QueryStringParameters["imageKey"]))
                 .AsOkGetResponse().Log(context.Logger);
         }
@@ -218,6 +225,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             var imageKey = request.QueryStringParameters["imageKey"];
             if (await ExistsS3ResourceWithKeyAsync(imageKey, context.Logger))
             {
@@ -266,6 +274,7 @@ public class ApiFunctions
     {
         try
         {
+            AWSSDKHandler.RegisterXRayForAllServices();
             var imageKey = request.QueryStringParameters["imageKey"];
             context.Logger.LogInformation($"Requesting Download-Url for key:[{imageKey}]");
             if (await ExistsS3ResourceWithKeyAsync(imageKey, context.Logger))
