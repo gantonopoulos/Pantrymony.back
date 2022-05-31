@@ -3,7 +3,7 @@ using System.Text.Json;
 using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 
-namespace Pantrymony.back.Extensions;
+namespace Pantrymony.back.Lambda.Extensions;
 
 public static class HttpStatusCodeExtensions
 {

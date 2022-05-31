@@ -19,7 +19,6 @@ public class CustomUserAuthorizer
         try
         {
             var accessToken = TokenOperations.ExtractTokenFromRequest(request);
-            context.Logger.LogInformation($"Authenticating user with token :[{accessToken}]");
             var isTokenValidated = await TokenOperations.ValidateTokenSignature(accessToken);
             var userEmail =  TokenOperations.GetTokenClaimValue(accessToken, UserEmailClaim);
             var response = GenerateResponse(

@@ -5,7 +5,7 @@ using Amazon.Lambda.Serialization.SystemTextJson;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Pantrymony.back.BusinessLogic;
 using Pantrymony.back.Definitions;
-using Pantrymony.back.Extensions;
+using Pantrymony.back.Lambda.Extensions;
 
 namespace Pantrymony.back.Lambda.Http;
 
@@ -21,7 +21,7 @@ public class DeleteVictual
             AWSSDKHandler.RegisterXRayForAllServices();
             var victualId = request.QueryStringParameters[Constants.VictualIdTag];
             var userId = request.QueryStringParameters[Constants.UserIdTag];
-            await UserVictualsService.DeleteUserVictualAsync(userId, victualId, context.Logger);
+            await UserVictualsService.DeleteUserVictualAsync(userId, victualId, context.GetCustomLogger());
         }
         catch (Exception e)
         {

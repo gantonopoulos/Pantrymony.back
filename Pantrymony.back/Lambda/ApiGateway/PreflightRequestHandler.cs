@@ -4,6 +4,7 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Pantrymony.back.Extensions;
+using Pantrymony.back.Lambda.Extensions;
 
 namespace Pantrymony.back.Lambda.ApiGateway;
 

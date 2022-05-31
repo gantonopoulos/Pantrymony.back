@@ -5,7 +5,7 @@ using Amazon.Lambda.Serialization.SystemTextJson;
 using Amazon.S3;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Pantrymony.back.Definitions;
-using Pantrymony.back.Extensions;
+using Pantrymony.back.Lambda.Extensions;
 using static Pantrymony.back.BusinessLogic.StorageService;
 
 namespace Pantrymony.back.Lambda.Storage;

@@ -6,7 +6,7 @@ using Amazon.S3;
 using Amazon.XRay.Recorder.Handlers.AwsSdk;
 using Pantrymony.back.BusinessLogic;
 using Pantrymony.back.Definitions;
-using Pantrymony.back.Extensions;
+using Pantrymony.back.Lambda.Extensions;
 
 namespace Pantrymony.back.Lambda.Storage;
 
