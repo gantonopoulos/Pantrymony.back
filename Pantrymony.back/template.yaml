@@ -15,6 +15,9 @@ Parameters:
   imageBucket:
     Type: String
     Default: "pantrymony-image-store"
+  victualsTable:
+      Type: String
+      Default: "Victuals"
 
 Globals:
   Function:
@@ -23,7 +26,7 @@ Globals:
     Tracing: Active
     Environment:
       Variables:
-        VICTUALS_TABLE: !Sub "Victuals-${stage}"
+        VICTUALS_TABLE: !Sub "${victualsTable}-${stage}"
         AUTH_DOMAIN: "gantonopoulos.eu.auth0.com"
         JWKS_URL: "https://gantonopoulos.eu.auth0.com/.well-known/jwks.json"
         IMAGES_S3_BUCKET: !Sub "${imageBucket}-${stage}"
@@ -33,12 +36,12 @@ Resources:
   PantrymonyApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: Prod
+      StageName: !Sub "${stage}"
       Auth:
         DefaultAuthorizer: LambdaTokenAuthorizer
         Authorizers:
           LambdaTokenAuthorizer:
-            FunctionArn: !GetAtt AuthorizeUser.Arn
+            FunctionArn: !GetAtt CustomUserAuthorizer.Arn
       MethodSettings:
         - LoggingLevel: INFO
           ResourcePath: '/*'
@@ -86,10 +89,10 @@ Resources:
               type: string        
                   
 
-  AuthorizeUser:
+  CustomUserAuthorizer:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.Auth.Authorizer::AuthorizeAsync
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Auth.CustomUserAuthorizer::AuthorizeUserAsync
       Runtime: dotnet6
       Policies:
         - AWSXRayDaemonWriteAccess
@@ -99,7 +102,7 @@ Resources:
   GetUnits:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUnits
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Http.GetUnits::GetUnitsAsync
       Runtime: dotnet6
       Description: A Lambda to return the supported units
       Policies:
@@ -112,10 +115,10 @@ Resources:
             Path: /units
             Method: get
 
-  Options:
+  PreflightRequestHandler:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::Options
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiGateway.PreflightRequestHandler::HandlePreflightRequestAsync
       Runtime: dotnet6
       Description: A Lambda to return the supported units
       MemorySize: 512
@@ -149,7 +152,7 @@ Resources:
         - AttributeName: Expires
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
-      TableName: Victuals-dev
+      TableName: !Sub "${victualsTable}-${stage}"
       LocalSecondaryIndexes:
         - IndexName: Expiration_Index
           KeySchema:
@@ -163,7 +166,7 @@ Resources:
   DeleteVictual:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::DeleteVictual
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.Http.DeleteVictual::DeleteVictualAsync
       Runtime: dotnet6
       Description: Lambda to delete a victual
       Events:
@@ -190,12 +193,12 @@ Resources:
               Action:
                 - dynamodb:DescribeTable
                 - dynamodb:DeleteItem
-              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/${victualsTable}-${stage}'
                   
-  GetUserVictuals:
+  GetManyUserVictuals:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUserVictuals
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Http.GetManyUserVictuals::GetManyUserVictualsAsync
       Runtime: dotnet6
       Description: A Lambda to return the victuals registered under a certain user with a certain victualId
       Events:
@@ -215,17 +218,17 @@ Resources:
       Policies:                
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid: GetUserVictualsPolicy
+            - Sid: GetManyUserVictualsPolicy
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
                 - dynamodb:Query
-              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/${victualsTable}-${stage}'
                 
-  GetUserVictual:
+  GetSingleUserVictual:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetUserVictual
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Http.GetSingleUserVictual::GetSingleUserVictualAsync
       Runtime: dotnet6
       Description: A Lambda to return the victuals registered under a certain user with a certain victualId
       Events:
@@ -247,17 +250,17 @@ Resources:
       Policies:
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid: GetVictualPolicy
+            - Sid: GetSingleUserVictualPolicy
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
                 - dynamodb:Query
-              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/${victualsTable}-${stage}'
                 
-  PostVictual:
+  CreateVictual:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PostVictual
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.Http.CreateVictual::CreateVictualAsync
       Runtime: dotnet6
       Description: Lambda handler inserting a new Victual in the db
       Events:
@@ -274,17 +277,17 @@ Resources:
       Policies:
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid:  PostVictualPolicy
+            - Sid:  CreateVictualPolicy
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
                 - dynamodb:UpdateItem
-              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/${victualsTable}-${stage}'
     
-  PutVictual:
+  UpdateVictual:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::PutVictual
+      Handler: Pantrymony.back::Pantrymony.back.Lambda.Http.UpdateVictual::UpdateVictualAsync
       Runtime: dotnet6
       Description: Lambda handler inserting a new Victual in the db
       Events:
@@ -307,19 +310,19 @@ Resources:
       Policies:
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid:  PutVictualPolicy
+            - Sid:  UpdateVictualPolicy
               Effect: Allow
               Action:
                 - dynamodb:DescribeTable
-                - dynamodb:GetItem
+                - dynamodb:Query
                 - dynamodb:UpdateItem
-              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/Victuals-dev'
+              Resource: !Sub 'arn:aws:dynamodb:${region}:${account}:table/${victualsTable}-${stage}'
 
               
-  GetSignedUploadUrl:
+  PreSignedUploadUrlRequester:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedUploadUrl      
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.Storage.PreSignedUploadUrlRequester::RequestPreSignedUploadUrlAsync      
       Runtime: dotnet6
       Description: Lambda handler returning a Signed-Url to upload files to the S3 bucket
       Events:
@@ -336,20 +339,19 @@ Resources:
               Model: Victual
               Required: true
               ValidateParameters: true
-
       Policies:
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid:  GetSignedUploadUrlPolicy
+            - Sid:  PreSignedUploadUrlRequesterPolicy
               Effect: Allow
               Action:
                 - s3:GetObject
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
               
-  GetSignedDownloadUrl:
+  PreSignedDownloadUrlRequester:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedDownloadUrl
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.Storage.PreSignedDownloadUrlRequester::RequestPreSignedDownloadUrlAsync
       Runtime: dotnet6
       Description: Lambda handler returning a Signed-Url to download files from the S3 bucket
       Events:
@@ -369,16 +371,17 @@ Resources:
       Policies:
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid:  GetSignedDownloadUrlPolicy
+            - Sid:  PreSignedDownloadUrlRequesterPolicy
               Effect: Allow
               Action: 
                 - s3:GetObject
                 - s3:ListBucket
               Resource: !Sub "arn:aws:s3:::${imageBucket}-${stage}/*"
-  GetSignedDeleteUrl:
+              
+  PreSignedDeleteUrlRequester:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler:  Pantrymony.back::Pantrymony.back.Lambda.ApiFunctions::GetSignedDeleteUrl
+      Handler:  Pantrymony.back::Pantrymony.back.Lambda.Storage.PreSignedDeleteUrlRequester::RequestPreSignedDeleteUrlAsync
       Runtime: dotnet6
       Description: Lambda handler returning a Signed-Url to delete files from the S3 bucket
       Events:
@@ -398,7 +401,7 @@ Resources:
       Policies:
         - AWSXRayDaemonWriteAccess
         - Statement:
-            - Sid:  GetSignedDeleteUrlPolicy
+            - Sid:  PreSignedDeleteUrlRequesterPolicy
               Effect: Allow
               Action:
                 - s3:GetObject

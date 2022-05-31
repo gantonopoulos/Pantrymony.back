@@ -2,12 +2,16 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Pantrymony.back.Definitions;
 using Pantrymony.back.Extensions;
 
 namespace Pantrymony.back.Auth;
+using static Constants.EnvironmentVariableTags;
 
 internal static class JwksClient
 {
+    
+
     public static async Task<SecurityKey> GetSigningKeyOfToken(string token)
     {
         JsonWebTokenHandler handler = new JsonWebTokenHandler();
@@ -17,7 +21,7 @@ internal static class JwksClient
             .Where(IsVerificationKey).Single(key => key.Kid == jsonWebToken.Kid);
         
         RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-        RSAParameters rsaParameters = new RSAParameters()
+        RSAParameters rsaParameters = new RSAParameters
         {
             Modulus = WebEncoders.Base64UrlDecode(publicKeyOfToken.N),
             Exponent = WebEncoders.Base64UrlDecode(publicKeyOfToken.E)
@@ -29,8 +33,8 @@ internal static class JwksClient
     
     private static async Task<JsonWebKeySet> FetchJsonWebKeySet()
     {
-        var jwksUrl = Environment.GetEnvironmentVariable("JWKS_URL")
-            .ThrowIfNull(new Exception($"Undefined environment variable: [JWKS_URL]!"));
+        var jwksUrl = Environment.GetEnvironmentVariable(JwksUrl)
+            .ThrowIfNull(new Exception($"Undefined environment variable: [{JwksUrl}]!"));
         var requestMsg = new HttpRequestMessage(HttpMethod.Get, jwksUrl);
         var response = await new HttpClient().SendAsync(requestMsg);
         response.ThrowIf(r => !r.IsSuccessStatusCode, 

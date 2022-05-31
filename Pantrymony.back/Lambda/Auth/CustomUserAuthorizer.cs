@@ -1,4 +1,3 @@
-using System.Security.Authentication;
 using System.Text.Json;
 using Amazon.Auth.AccessControlPolicy;
 using Amazon.Lambda.APIGatewayEvents;
@@ -8,12 +7,12 @@ using Pantrymony.back.Auth;
 
 namespace Pantrymony.back.Lambda.Auth;
 
-public class Authorizer
+public class CustomUserAuthorizer
 {
     private const string UserEmailClaim = "email";
 
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
-    public static async Task<APIGatewayCustomAuthorizerResponse> AuthorizeAsync(
+    public async Task<APIGatewayCustomAuthorizerResponse> AuthorizeUserAsync(
         APIGatewayCustomAuthorizerRequest request, 
         ILambdaContext context)
     {
@@ -32,16 +31,14 @@ public class Authorizer
             context.Logger.LogInformation($"Generated response: [{JsonSerializer.Serialize(response)}]");
             return response;
         }
-        catch (AuthenticationException e)
+        catch (Exception e)
         {
             context.Logger.LogError($"Error {e}\n Stack: {e.StackTrace}");
             return GenerateResponse(Guid.NewGuid().ToString(), Statement.StatementEffect.Deny);
         }
     }
 
-    private static APIGatewayCustomAuthorizerResponse GenerateResponse(
-        string principalId,
-        Statement.StatementEffect effect)
+    private APIGatewayCustomAuthorizerResponse GenerateResponse(string principalId, Statement.StatementEffect effect)
     {
         var authResponse = new APIGatewayCustomAuthorizerResponse
         {
