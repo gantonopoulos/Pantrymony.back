@@ -42,7 +42,7 @@ The resulting website is not very fast but it works as expected. This is partly 
 
 ## Backend
 
-As mentioned above, the backend uses AWS SAM. The template for the creation of the infrastructure can be found in the [template.yaml](template.yaml) file in the project directory.
+As mentioned above, the backend uses AWS SAM. The template for the creation of the infrastructure can be found in the [template.yaml](../template.yaml) file in the project directory.
 
 It creates an API-Gateway with Proxy-Lambda integrations.
 
@@ -70,5 +70,12 @@ All the resources that I consulted are being documented in Markdown files found 
 
 - [Frontend](https://github.com/gantonopoulos/Pantrymony)
 - [Backend](https://github.com/gantonopoulos/Pantrymony.back)
-- [template.yaml](template.yaml) (Serverless file)
-- 
+- [template.yaml](../template.yaml) (Serverless file)
+- [Image](CloudFormationStacks.png) of the CloudFormation Stacks for both frontend and backend (backend in focus).
+- [Image](ApiGatewayWithLambdaIntegrationSample.png) of the resulting API Gateway with all its endpoints and a sample lambda proxy integration.
+- [Image](ApiGatewayWithLoggingAndTracingEnabled.png) of the API-Gateway's configuration with both execution logging and X-Ray tracing enabled on it.
+- [Image](PutLambdaWithParameterAndBodyVerificationEnabled.png) of the update lambda configuration, where I had to activate verification for both the parameters and the body.
+- [Image](UpdateLambdaWIthXrayTracing.png) of the update lambda with XRay tracing of its calls.
+- [Image](S3ImageBucketPermissions.png) of the image's S3 bucket with the permissions configuration.
+- [Image](CloudwatchLogGroups.png) from Cloudwatch with all resulting log groups, one for each Lambda and the ApiGateway.
+- [Image](CloudwatchXRayAnalysis.png) from Cloudwatch with an overview of the X-Ray analysis.
