@@ -1,6 +1,6 @@
 # Pantrymony
 
-I have implemented an application to manage ones Pantry.
+I have implemented an application to manage ones Pantry. The application website is in [this](https://d1z0cnh1fsmyo1.cloudfront.net) url.
 
 ## Technologies employed
 

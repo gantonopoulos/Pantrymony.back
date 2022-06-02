@@ -1,0 +1,523 @@
+{
+	"info": {
+		"_postman_id": "9e28792a-7e54-4f2e-8c59-6dcc79f52466",
+		"name": "capstone",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15529083"
+	},
+	"item": [
+		{
+			"name": "UserVictuals",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Origin",
+						"value": "https://localhost:7260",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/uservictuals?userId=georanto@gmail.com",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"uservictuals"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "georanto@gmail.com"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SingleUserVitual",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/uservictual?userId=georanto@gmail.com&victualId=da1b2daa-3a73-425e-812e-e2f164f54507",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"uservictual"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "georanto@gmail.com"
+						},
+						{
+							"key": "victualId",
+							"value": "da1b2daa-3a73-425e-812e-e2f164f54507"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SignedUploadUrl",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/uploadImageUrl?imageKey=da1b2daa-3a73-425e-812e-e2f164f54507",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"uploadImageUrl"
+					],
+					"query": [
+						{
+							"key": "imageKey",
+							"value": "da1b2daa-3a73-425e-812e-e2f164f54507"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SignedDownloadUrl",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/downloadImageUrl?imageKey=da1b2daa-3a73-425e-812e-e2f164f54507",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"downloadImageUrl"
+					],
+					"query": [
+						{
+							"key": "imageKey",
+							"value": "da1b2daa-3a73-425e-812e-e2f164f54507"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SignedDeleteUrl",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/deleteImageUrl",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"deleteImageUrl"
+					],
+					"query": [
+						{
+							"key": "imageKey",
+							"value": "Joghurt.jpg",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Verb",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "OPTIONS",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Verb",
+					"originalRequest": {
+						"method": "OPTIONS",
+						"header": [],
+						"url": {
+							"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/Prod",
+							"protocol": "https",
+							"host": [
+								"{{apigw}}",
+								"execute-api",
+								"eu-central-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"Prod"
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "42"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 18 May 2022 06:13:33 GMT"
+						},
+						{
+							"key": "x-amzn-RequestId",
+							"value": "abaf8f9c-6ca4-4a23-8c7f-c562e92053c2"
+						},
+						{
+							"key": "x-amzn-ErrorType",
+							"value": "MissingAuthenticationTokenException"
+						},
+						{
+							"key": "x-amz-apigw-id",
+							"value": "STs2JFmLliAFeyg="
+						},
+						{
+							"key": "X-Cache",
+							"value": "Error from cloudfront"
+						},
+						{
+							"key": "Via",
+							"value": "1.1 e96aebc8d7c9ec82b88c3160a18fed96.cloudfront.net (CloudFront)"
+						},
+						{
+							"key": "X-Amz-Cf-Pop",
+							"value": "FRA56-P6"
+						},
+						{
+							"key": "X-Amz-Cf-Id",
+							"value": "kHMtlaLV6UMzxoeZjPtbs4RZJDdbDiv8e3nYteSctIbnGTmVK80kDg=="
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"message\": \"Missing Authentication Token\"\n}"
+				}
+			]
+		},
+		{
+			"name": "UserVictual",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/deletevictual",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"deletevictual"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "georanto@gmail.com",
+							"disabled": true
+						},
+						{
+							"key": "victualId",
+							"value": "14970e3b-f204-4124-b347-8db65be3d5ff",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateUserVictual",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"UserId\":\"georanto@gmail.com\",\n\"VictualId\":\"14970e3b-f204-4124-b347-8db65be3d5ff\",\n\"Calories\":\"10\",\n\"Carbs\":10,\n\"Expires\":\"2022-09-01T00:00:00\",\n\"Fat\":1.5,\n\"Name\":\"Milk 1.5%\",\n\"Protein\":30,\n\"Quantity\":1,\n\"Unit\":\"mL\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/createvictual",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"createvictual"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateVictual",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"UserId\": \"georanto@gmail.com\",\n  \"VictualId\": \"14970e3b-f204-4124-b347-8db65be3d5ff\",\n  \"Calories\": 10,\n  \"Carbs\": 10,\n  \"Expires\": \"2022-09-01T00:00:00\",\n  \"Fat\": 1.5,\n  \"Name\": \"Milk 1.%\",\n  \"Protein\": 30,\n  \"Quantity\": 15,\n  \"Unit\": \"L\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/updatevictual?userId=georanto@gmail.com&victualId=14970e3b-f204-4124-b347-8db65be3d5ff",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"updatevictual"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "georanto@gmail.com"
+						},
+						{
+							"key": "victualId",
+							"value": "14970e3b-f204-4124-b347-8db65be3d5ff"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Units",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{StoredToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://{{apigw}}.execute-api.eu-central-1.amazonaws.com/{{Stage}}/units",
+					"protocol": "https",
+					"host": [
+						"{{apigw}}",
+						"execute-api",
+						"eu-central-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"{{Stage}}",
+						"units"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "apigw",
+			"value": "d840xmxmb0",
+			"type": "string"
+		},
+		{
+			"key": "StoredToken",
+			"value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkZXYUtLSW5wZ05lRG5zTDVPRHpzeiJ9.eyJnaXZlbl9uYW1lIjoizpHOvc-Ez4nOvc-Mz4DOv8-FzrvOv8-CIiwiZmFtaWx5X25hbWUiOiLOk861z47Pgc6zzrnOv8-CIiwibmlja25hbWUiOiJnZW9yYW50byIsIm5hbWUiOiLOkc69z4TPic69z4zPgM6_z4XOu86_z4IgzpPOtc-Oz4HOs865zr_PgiIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS0vQU9oMTRHaUFsZG1IUjc5UzlUeHExeWlJT3A0WDJCMTZUTEw1YW92bktyejFHZz1zOTYtYyIsImxvY2FsZSI6ImVuIiwidXBkYXRlZF9hdCI6IjIwMjItMDUtMjZUMjI6MDM6MjUuMDMzWiIsImVtYWlsIjoiZ2VvcmFudG9AZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImlzcyI6Imh0dHBzOi8vZ2FudG9ub3BvdWxvcy5ldS5hdXRoMC5jb20vIiwic3ViIjoiZ29vZ2xlLW9hdXRoMnwxMDkwNzAzMTQ0Njg3MzIxMjY3OTQiLCJhdWQiOiIwSkFKcUw5U1FvcEdydEhTU1FhRWdzSEFZVVRaUWx2UiIsImlhdCI6MTY1MzkyMzcwMCwiZXhwIjoxNjUzOTU5NzAwfQ.yUcQHRUYz8xVLgl1lNuQLpuL9oDv2rzHtFjm8qIU-BhafKfLPIgoaFkxprQDvIXexwadQZ8-v3IUjaylpsky5poMGL5RNw9bftq1nH0EP2IXMjq8Lg-W0nX640q12XhqRgz908hNYEydVPXAqTF9vmDCBAt4uabypXN3qPMgvb4vJR4Vaw5p2SwlSgkuEEDl341vLHhsVQGagm9sVknHoXlPyV4RVNbmXKkP6OQ8ablCTGNbLGPXjV7Rc5UoFk2k9fxssnviiAyQCqmqlXJgpE5MguQJu4vw2uTT1ETMkfJbDcOk9-cUALCUqj4U8-bp2AqBgBkXKxQWDMNBTpiOaw",
+			"type": "string"
+		},
+		{
+			"key": "Stage",
+			"value": "dev"
+		}
+	]
+}
