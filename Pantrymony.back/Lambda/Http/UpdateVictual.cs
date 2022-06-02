@@ -26,6 +26,10 @@ public class UpdateVictual
                 .ThrowIfNull(new InvalidDataException("Malformed request body!"));
             var userId = request.QueryStringParameters[Constants.UserIdTag];
             var victualId = request.QueryStringParameters[Constants.VictualIdTag];
+            if (!request.WasSentByUser(userId))
+            {
+                return HttpStatusCode.Unauthorized.AsApiGatewayProxyResponse();
+            }
             if (!updatedVictual.UserId.Equals(userId) || !updatedVictual.VictualId.ToString().Equals(victualId))
                 throw new ArgumentOutOfRangeException();
             await UserVictualsService.UpdateVictualAsync(userId, victualId, updatedVictual, context.GetCustomLogger());

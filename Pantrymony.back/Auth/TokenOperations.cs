@@ -1,5 +1,4 @@
 using System.Security.Authentication;
-using Amazon.Lambda.APIGatewayEvents;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Pantrymony.back.Extensions;
@@ -8,13 +7,13 @@ namespace Pantrymony.back.Auth;
 
 public static class TokenOperations
 {
-    public static string ExtractTokenFromRequest(APIGatewayCustomAuthorizerRequest request)
+    public static string ExtractJwtTokenFromAuthorizationHeader(string authorizationHeader)
     {
-        request.AuthorizationToken.ThrowIf(token => 
+        authorizationHeader.ThrowIf(token => 
                 !token.ToLower().StartsWith("bearer ") 
-                || request.AuthorizationToken.Split(' ').Length != 2, 
-            new AuthenticationException($"Malformed authorization token {request.AuthorizationToken}!"));
-        return request.AuthorizationToken.Split(' ')[1];
+                || authorizationHeader.Split(' ').Length != 2, 
+            new AuthenticationException($"Malformed authorization token {authorizationHeader}!"));
+        return authorizationHeader.Split(' ')[1];
     }
     
     /// <summary>

@@ -21,9 +21,13 @@ public class CreateVictual
         try
         {
             AWSSDKHandler.RegisterXRayForAllServices();
-            await UserVictualsService.CreateVictualAsync(
-                JsonSerializer.Deserialize<Victual>(request.Body)
-                    .ThrowIfNull(new InvalidDataException("Malformed request body!")), context.GetCustomLogger());
+            var victual = JsonSerializer.Deserialize<Victual>(request.Body)
+                .ThrowIfNull(new InvalidDataException("Malformed request body!"));
+            if (!request.WasSentByUser(victual.UserId))
+            {
+                return HttpStatusCode.Unauthorized.AsApiGatewayProxyResponse();
+            }
+            await UserVictualsService.CreateVictualAsync(victual, context.GetCustomLogger());
         }
         catch (Exception e)
         {

@@ -6,7 +6,9 @@ public static class Constants
     public const string UserIdTag = "userId";
     public const string VictualIdTag = "victualId";
     public const string ImageKeyTag = "imageKey";
-
+    public const string UserEmailClaim = "email";
+    public const string RequestHeaderAuthorizationTag = "Authorization";
+    
     public static class EnvironmentVariableTags
     {
         public const string BucketNameTag = "IMAGES_S3_BUCKET";

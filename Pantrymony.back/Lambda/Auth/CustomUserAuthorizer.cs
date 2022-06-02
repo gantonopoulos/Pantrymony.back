@@ -4,13 +4,12 @@ using Amazon.Lambda.APIGatewayEvents;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.SystemTextJson;
 using Pantrymony.back.Auth;
+using Pantrymony.back.Definitions;
 
 namespace Pantrymony.back.Lambda.Auth;
 
 public class CustomUserAuthorizer
 {
-    private const string UserEmailClaim = "email";
-
     [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
     public async Task<APIGatewayCustomAuthorizerResponse> AuthorizeUserAsync(
         APIGatewayCustomAuthorizerRequest request, 
@@ -18,9 +17,9 @@ public class CustomUserAuthorizer
     {
         try
         {
-            var accessToken = TokenOperations.ExtractTokenFromRequest(request);
+            var accessToken = TokenOperations.ExtractJwtTokenFromAuthorizationHeader(request.AuthorizationToken);
             var isTokenValidated = await TokenOperations.ValidateTokenSignature(accessToken);
-            var userEmail =  TokenOperations.GetTokenClaimValue(accessToken, UserEmailClaim);
+            var userEmail =  TokenOperations.GetTokenClaimValue(accessToken, Constants.UserEmailClaim);
             var response = GenerateResponse(
                 userEmail, 
                 isTokenValidated

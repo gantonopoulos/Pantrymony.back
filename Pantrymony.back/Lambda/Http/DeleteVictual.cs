@@ -21,6 +21,10 @@ public class DeleteVictual
             AWSSDKHandler.RegisterXRayForAllServices();
             var victualId = request.QueryStringParameters[Constants.VictualIdTag];
             var userId = request.QueryStringParameters[Constants.UserIdTag];
+            if (!request.WasSentByUser(userId))
+            {
+                return HttpStatusCode.Unauthorized.AsApiGatewayProxyResponse();
+            }
             await UserVictualsService.DeleteUserVictualAsync(userId, victualId, context.GetCustomLogger());
         }
         catch (Exception e)
